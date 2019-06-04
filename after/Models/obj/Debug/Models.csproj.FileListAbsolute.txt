@@ -1,5 +1,0 @@
-D:\workspace\live\LiveSimSamples\PersonManagementApp\Models\bin\Debug\Models.dll
-D:\workspace\live\LiveSimSamples\PersonManagementApp\Models\bin\Debug\Models.pdb
-D:\workspace\live\LiveSimSamples\PersonManagementApp\Models\obj\Debug\Models.csproj.CoreCompileInputs.cache
-D:\workspace\live\LiveSimSamples\PersonManagementApp\Models\obj\Debug\Models.dll
-D:\workspace\live\LiveSimSamples\PersonManagementApp\Models\obj\Debug\Models.pdb

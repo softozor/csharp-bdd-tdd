@@ -1,6 +1,0 @@
-D:\workspace\softozor\csharp-bdd-tdd\before\Models\bin\Debug\Models.dll
-D:\workspace\softozor\csharp-bdd-tdd\before\Models\bin\Debug\Models.pdb
-D:\workspace\softozor\csharp-bdd-tdd\before\Models\obj\Debug\Models.csprojAssemblyReference.cache
-D:\workspace\softozor\csharp-bdd-tdd\before\Models\obj\Debug\Models.csproj.CoreCompileInputs.cache
-D:\workspace\softozor\csharp-bdd-tdd\before\Models\obj\Debug\Models.dll
-D:\workspace\softozor\csharp-bdd-tdd\before\Models\obj\Debug\Models.pdb
