@@ -22,19 +22,9 @@ namespace PersonManagementModule.Services
       _dataService.SavePersons(persons ?? throw new NullReferenceException("Cannot save null list of persons"));
     }
 
-    public void Export(string filename, FileFormat format)
-    {
-      throw new NotImplementedException();
-    }
-
     public IEnumerable<Person> GetPersons()
     {
       return _dataService.GetAllPersons();
-    }
-
-    public void Import(string filename, FileFormat format)
-    {
-      throw new NotImplementedException();
     }
   }
 }

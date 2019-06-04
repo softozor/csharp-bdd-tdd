@@ -20,7 +20,7 @@ namespace PersonManagementTests
         .Returns(Builder<Person>.CreateListOfSize(10).Build());
       var provider = new PersonProvider(dataServiceMock.Object);
 
-      System.Func<Person, int> personId = person => person.Id;
+      System.Func<Person, int?> personId = person => person.Id;
       var personsInDatabase = dataServiceMock.Object.GetAllPersons().OrderBy(personId);
       var personsInProvider = provider.GetPersons().OrderBy(personId);
 
