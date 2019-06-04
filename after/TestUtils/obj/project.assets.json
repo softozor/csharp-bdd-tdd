@@ -1,0 +1,177 @@
+{
+  "version": 3,
+  "targets": {
+    ".NETFramework,Version=v4.7.1": {
+      "NBuilder/6.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net40/FizzWare.NBuilder.dll": {}
+        },
+        "runtime": {
+          "lib/net40/FizzWare.NBuilder.dll": {}
+        }
+      },
+      "Models/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/Models.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Models.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7.1/win": {
+      "NBuilder/6.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net40/FizzWare.NBuilder.dll": {}
+        },
+        "runtime": {
+          "lib/net40/FizzWare.NBuilder.dll": {}
+        }
+      },
+      "Models/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/Models.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Models.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7.1/win-x64": {
+      "NBuilder/6.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net40/FizzWare.NBuilder.dll": {}
+        },
+        "runtime": {
+          "lib/net40/FizzWare.NBuilder.dll": {}
+        }
+      },
+      "Models/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/Models.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Models.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7.1/win-x86": {
+      "NBuilder/6.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net40/FizzWare.NBuilder.dll": {}
+        },
+        "runtime": {
+          "lib/net40/FizzWare.NBuilder.dll": {}
+        }
+      },
+      "Models/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/Models.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Models.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "NBuilder/6.0.0": {
+      "sha512": "fWoh8LbIQYeOQeq4iTkpBU6MP59ASgIBsuZVZFI+sIQI6wXAz7id/LGyZzd4Cc8re0l98GgnWrXoJvARgyDHLw==",
+      "type": "package",
+      "path": "nbuilder/6.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/FizzWare.NBuilder.dll",
+        "lib/netstandard1.6/FizzWare.NBuilder.dll",
+        "nbuilder.6.0.0.nupkg.sha512",
+        "nbuilder.nuspec"
+      ]
+    },
+    "Models/1.0.0": {
+      "type": "project",
+      "path": "../Models/Models.csproj",
+      "msbuildProject": "../Models/Models.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    ".NETFramework,Version=v4.7.1": [
+      "Models >= 1.0.0",
+      "NBuilder >= 6.0.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\mihl\\.nuget\\packages\\": {},
+    "C:\\Microsoft\\Xamarin\\NuGet\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "D:\\workspace\\live\\LiveSimSamples\\PersonManagementApp\\TestUtils\\TestUtils.csproj",
+      "projectName": "TestUtils",
+      "projectPath": "D:\\workspace\\live\\LiveSimSamples\\PersonManagementApp\\TestUtils\\TestUtils.csproj",
+      "packagesPath": "C:\\Users\\mihl\\.nuget\\packages\\",
+      "outputPath": "D:\\workspace\\live\\LiveSimSamples\\PersonManagementApp\\TestUtils\\obj\\",
+      "projectStyle": "PackageReference",
+      "skipContentFileWrite": true,
+      "fallbackFolders": [
+        "C:\\Microsoft\\Xamarin\\NuGet\\"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\mihl\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 18.2.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net471"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "D:\\Libraries\\live\\DevExpress 18.2\\Components\\System\\Components\\Packages": {},
+        "\\\\flanker.simdev.defence.ruag.com\\nuget\\packages": {},
+        "https://api.nuget.org/v3/index.json": {},
+        "https://tfs.simdev.defence.ruag.com/tfs/DefaultCollection/_packaging/LiveSim/nuget/v3/index.json": {},
+        "https://tfs.simdev.defence.ruag.com/tfs/DefaultCollection/_packaging/LiveSimCore/nuget/v3/index.json": {}
+      },
+      "frameworks": {
+        "net471": {
+          "projectReferences": {
+            "D:\\workspace\\live\\LiveSimSamples\\PersonManagementApp\\Models\\Models.csproj": {
+              "projectPath": "D:\\workspace\\live\\LiveSimSamples\\PersonManagementApp\\Models\\Models.csproj"
+            }
+          }
+        }
+      }
+    },
+    "frameworks": {
+      "net471": {
+        "dependencies": {
+          "NBuilder": {
+            "target": "Package",
+            "version": "[6.0.0, )"
+          }
+        }
+      }
+    },
+    "runtimes": {
+      "win": {
+        "#import": []
+      },
+      "win-x64": {
+        "#import": []
+      },
+      "win-x86": {
+        "#import": []
+      }
+    }
+  }
+}

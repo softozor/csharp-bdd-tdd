@@ -1,0 +1,11 @@
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\bin\Debug\DataAccess.dll
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\bin\Debug\DataAccess.pdb
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\bin\Debug\Newtonsoft.Json.dll
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\bin\Debug\Newtonsoft.Json.pdb
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\bin\Debug\Models.dll
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\bin\Debug\Models.pdb
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\obj\Debug\DataAccess.csprojAssemblyReference.cache
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\obj\Debug\DataAccess.csproj.CoreCompileInputs.cache
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\obj\Debug\DataAccess.csproj.CopyComplete
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\obj\Debug\DataAccess.dll
+D:\workspace\live\LiveSimSamples\PersonManagementApp\DataAccess\obj\Debug\DataAccess.pdb
