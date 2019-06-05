@@ -70,6 +70,7 @@
     </Compile>
     <Compile Include="Services\IPersonProvider.cs" />
     <Compile Include="Services\PersonProvider.cs" />
+    <Compile Include="ViewModels\ImportPayload.cs" />
     <Compile Include="ViewModels\PersonItem.cs" />
     <Compile Include="ViewModels\PersonViewModel.cs" />
     <Compile Include="Views\PersonView.xaml.cs">

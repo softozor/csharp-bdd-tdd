@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using DataAccess.Handlers;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using PersonManagementModule.Services;
 using System.Linq;
@@ -9,6 +10,8 @@ namespace PersonManagementSpec.StepDefinitions
   [Binding]
   public class TechnicalOfficerManagesPersonSteps
   {
+    const string FILE_TO_IMPORT = "Fixtures/PersonsToImport.json";
+
     readonly ScenarioContext _scenarioContext;
     readonly IPersonProvider _personProvider;
     readonly PersonManager _personManager;
@@ -40,6 +43,20 @@ namespace PersonManagementSpec.StepDefinitions
       _personManager.Save();
     }
 
+    [When(@"the Technical Officer imports a list of persons")]
+    public void WhenTheTechnicalOfficerImportsAListOfPersons()
+    {
+      ImportNonEmptyListOfPersons();
+    }
+
+    private void ImportNonEmptyListOfPersons()
+    {
+      _scenarioContext.Set(_personProvider.GetPersons().Count(), "initialPersonsCount");
+      _personManager.Import(FILE_TO_IMPORT);
+      var personsToImport = JsonFileHandler.ReadPersons(FILE_TO_IMPORT);
+      Assert.IsTrue(personsToImport.Count() > 0);
+    }
+
     [Then(@"the new person is persisted to the database")]
     public void ThenTheNewPersonIsPersistedToTheDatabase()
     {
@@ -51,6 +68,14 @@ namespace PersonManagementSpec.StepDefinitions
           && person.Title == newPerson.Title
       );
       Assert.IsTrue(isNewPersonPersistedToDatabase);
+    }
+
+    [Then(@"they are not persisted to the database")]
+    public void ThenTheyAreNotPersistedToTheDatabase()
+    {
+      var expectedPersonsCount = _scenarioContext.Get<int>("initialPersonsCount");
+      var actualPersonsCount = _personProvider.GetPersons().Count();
+      Assert.AreEqual(expectedPersonsCount, actualPersonsCount);
     }
   }
 }

@@ -1,4 +1,5 @@
 ﻿using BoDi;
+using DataAccess.Handlers;
 using Microsoft.Practices.Unity;
 using PersonManagementModule.Services;
 using System.Collections.Specialized;
@@ -47,13 +48,14 @@ namespace PersonManagementSpec
 
     private void SetupStepsDependencies(Bootstrapper bootstrapper)
     {
-      ExposeDatabase(bootstrapper);
+      ExposeType<IPersonProvider>(bootstrapper);
+      ExposeType<IFileHandlerFactory>(bootstrapper);
     }
 
-    private void ExposeDatabase(Bootstrapper bootstrapper)
+    private void ExposeType<T>(Bootstrapper bootstrapper) where T : class
     {
-      var personDatabase = bootstrapper.Container.Resolve<IPersonProvider>();
-      _objectContainer.RegisterInstanceAs(personDatabase);
+      var instance = bootstrapper.Container.Resolve<T>();
+      _objectContainer.RegisterInstanceAs(instance);
     }
 
     [AfterScenario]

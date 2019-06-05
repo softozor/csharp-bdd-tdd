@@ -125,6 +125,25 @@ this.FeatureBackground();
 #line hidden
             this.ScenarioCleanup();
         }
+        
+        [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute()]
+        [Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("The Technical Officer imports new persons")]
+        [Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "Technical Officer manages persons")]
+        public virtual void TheTechnicalOfficerImportsNewPersons()
+        {
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("The Technical Officer imports new persons", "  Pure data importation has no effect on the underlying database\'s state.", ((string[])(null)));
+#line 26
+this.ScenarioInitialize(scenarioInfo);
+            this.ScenarioStart();
+#line 10
+this.FeatureBackground();
+#line 30
+  testRunner.When("the Technical Officer imports a list of persons", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line 31
+  testRunner.Then("they are not persisted to the database", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line hidden
+            this.ScenarioCleanup();
+        }
     }
 }
 #pragma warning restore

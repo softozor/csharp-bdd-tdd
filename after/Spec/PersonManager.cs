@@ -30,5 +30,15 @@ namespace PersonManagementSpec
     {
       _viewModel.SavePersonsCommand.Execute();
     }
+
+    public void Import(string filename)
+    {
+      var payload = new ImportPayload()
+      {
+        Filename = filename,
+        FileType = "JSON"
+      };
+      _viewModel.ImportPersonsCommand.Execute(payload);
+    }
   }
 }

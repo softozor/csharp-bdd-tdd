@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using DataAccess;
+﻿using DataAccess.Services;
 using Models;
+using System;
+using System.Collections.Generic;
 
 namespace PersonManagementModule.Services
 {
@@ -13,9 +13,6 @@ namespace PersonManagementModule.Services
     {
       _dataService = dataService;
     }
-
-    public string Filename { get; private set; }
-    public FileFormat FileType { get; private set; }
 
     public void Save(IEnumerable<Person> persons)
     {

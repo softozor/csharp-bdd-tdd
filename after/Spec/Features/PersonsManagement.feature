@@ -21,4 +21,11 @@ Scenario: The Technical Officer manually persists a new person to the database
 
   Given the Technical Officer has added a new person
   When she saves
-  Then the new person is persisted to the database 
+  Then the new person is persisted to the database
+
+Scenario: The Technical Officer imports new persons
+
+  Pure data importation has no effect on the underlying database's state.
+
+  When the Technical Officer imports a list of persons 
+  Then they are not persisted to the database

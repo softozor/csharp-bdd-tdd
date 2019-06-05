@@ -11,7 +11,10 @@ namespace Models
 
     public override bool Equals(object obj)
     {
-      return Equals((Person)obj);
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals(obj as Person);
     }
 
     public override int GetHashCode()

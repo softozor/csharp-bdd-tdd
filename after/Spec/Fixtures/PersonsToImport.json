@@ -1,0 +1,34 @@
+{
+  "DataItems": [
+    {
+      "Id": 1,
+      "FirstName": "René",
+      "LastName": "Süssmilch",
+      "Title": "PO"
+    },
+    {
+      "Id": 2,
+      "FirstName": "Jonas",
+      "LastName": "Heil",
+      "Title": "SM"
+    },
+    {
+      "Id": 3,
+      "FirstName": "Marcel",
+      "LastName": "Althaus",
+      "Title": "Architect"
+    },
+    {
+      "Id": 4,
+      "FirstName": "Urs",
+      "LastName": "Flückiger",
+      "Title": "Developer"
+    },
+    {
+      "Id": 5,
+      "FirstName": "Ulrich",
+      "LastName": "Flückiger",
+      "Title": "Tester"
+    }
+  ]
+}
