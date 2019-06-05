@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DataAccess
+namespace DataAccess.Handlers
 {
   public class UnsupportedFileTypeException : Exception
   {

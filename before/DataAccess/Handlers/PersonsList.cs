@@ -1,7 +1,7 @@
 ﻿using Models;
 using System.Collections.Generic;
 
-namespace DataAccess
+namespace DataAccess.Handlers
 {
   public class PersonsList
   {

@@ -1,24 +1,23 @@
-﻿using Models;
-using Newtonsoft.Json;
+﻿using DataAccess.Handlers;
+using Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Configuration;
-using System.IO;
 using System.Linq;
 
-namespace DataAccess
+namespace DataAccess.Services
 {
   public class FileDataService : IDataService
   {
-    public string Filename { get; private set; }
-    public FileFormat FileType { get; private set; }
+    readonly IFileHandler _fileHandler;
 
-    public FileDataService()
+    public FileDataService(IFileHandlerFactory factory)
     {
       var dbSettings = ConfigurationManager.GetSection("PersonMgmt/DatabaseSettings") as NameValueCollection;
-      Filename = dbSettings["Filename"];
-      FileType = (FileFormat)Enum.Parse(typeof(FileFormat), dbSettings["Type"]);
+      var filename = dbSettings["Filename"];
+      var fileType = dbSettings["Type"];
+      _fileHandler = factory.Create(filename, fileType);
     }
 
     public void Dispose()
@@ -28,7 +27,7 @@ namespace DataAccess
 
     public IEnumerable<Person> GetAllPersons()
     {
-      throw new NotImplementedException();
+      return _fileHandler.ReadFile();
     }
 
     /// <summary>Overwrites the currently persisted data with the provided <paramref name="persons" />.</summary>
@@ -36,7 +35,20 @@ namespace DataAccess
     /// <exception cref="System.NullReferenceException"><paramref name="persons" /> is null</exception>
     public void SavePersons(IEnumerable<Person> persons)
     {
-      throw new NotImplementedException();
+      if(persons == null)
+        throw new NullReferenceException();
+      persons = IndexPersons(persons);
+      _fileHandler.WriteFile(persons);
+    }
+
+    IEnumerable<Person> IndexPersons(IEnumerable<Person> persons)
+    {
+      var startIdx = 0;
+      return persons.Select(person => 
+      {
+        person.Id = startIdx++;
+        return person;
+      });
     }
   }
 }

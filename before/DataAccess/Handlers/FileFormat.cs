@@ -1,4 +1,4 @@
-﻿namespace DataAccess
+﻿namespace DataAccess.Handlers
 {
   public enum FileFormat
   {

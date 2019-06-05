@@ -1,28 +1,30 @@
 ﻿using System;
-using System.Globalization;
 
 namespace Models
 {
   public class Person : IEquatable<Person>
   {
-    public int Id { get; set; }
+    public int? Id { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Title { get; set; }
 
     public override bool Equals(object obj)
     {
-      return Equals((Person)obj);
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals(obj as Person);
     }
 
     public override int GetHashCode()
     {
-      return Id ^ FirstName.GetHashCode() ^ LastName.GetHashCode() ^ Title.GetHashCode();
+      return base.GetHashCode();
     }
 
     public override string ToString()
     {
-      return $"Person {Id.ToString(CultureInfo.InvariantCulture)} is {Title} {FirstName} {LastName}";
+      return $"Person {Id.ToString()} is {Title} {FirstName} {LastName}";
     }
 
     public bool Equals(Person other)

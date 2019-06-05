@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DataAccess
+namespace DataAccess.Services
 {
   public interface IDataService : IDisposable
   {
