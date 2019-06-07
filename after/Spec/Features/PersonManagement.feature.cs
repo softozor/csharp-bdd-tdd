@@ -1,3 +1,3 @@
-﻿#error Version conflict - SpecFlow Visual Studio extension attempted to use SpecFlow code-behind generator 1.9, but project 'Spec' references SpecFlow 3.0.
-#error We recommend migrating to MSBuild code-behind generation to resolve this issue.
+﻿#error Could not find a reference to SpecFlow in project 'Spec'.
+#error Please add the 'TechTalk.SpecFlow' package to the project and use MSBuild generation instead of using SpecFlowSingleFileGenerator.
 #error For more information see https://specflow.org/documentation/Generate-Tests-from-MsBuild/

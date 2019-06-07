@@ -58,9 +58,17 @@ By default, the project uses MSTest.
 
 ![Install SpecFlow](/doc/img/InstallSpecFlow.png)
 
-5. Add a new folder `Features` to the `Spec` project
+5. Add a reference to the TechTalk.SpecFlow dll **[IS THAT REALLY NECESSARY?]** :
 
-6. Create a folder `StepDefinitions` in the `Spec` project.
+![Add TechTalk SpecFlow reference](/doc/img/AddTechTalkSpecFlowReference.png)
+
+6. Install `Prism.Unity` (6.3.0) NuGet package in the `Spec` project.
+
+7. Provide the `Spec` project with a reference to the `Module`, `DataAccess`, and `Models` projects.
+
+8. Add a new folder `Features` to the `Spec` project.
+
+9. Create a folder `StepDefinitions` in the `Spec` project.
 
 ### Feature initialization
 
@@ -119,6 +127,187 @@ with
 
 ```c#
 _scenarioContext.Pending();
+```
+
+## Make the module available to the acceptance tests
+
+The `Spec` project builds an application that will glue together all the components necessary for our module to run. In particular, it needs to bootstrap our module. Because all the acceptance tests should be independent of each others, that means the module needs to be bootstrapped before each SpecFlow scenario. This is done by defining so-called [hooks](https://specflow.org/documentation/Hooks/). To boostrap our module in our acceptance tests, perform the following steps:
+
+1. Add a SpecFlow hook to the `Spec` project:
+
+![Add SpecFlow Hook](/doc/img/AddSpecFlowHook.png)
+
+2. Run the module in the `BeforeScenario` hook:
+
+```c#
+// Spec/Hooks.cs
+
+using TechTalk.SpecFlow;
+
+namespace Spec
+{
+  [Binding]
+  public sealed class Hooks
+  {
+    [BeforeScenario]
+    public void BeforeScenario()
+    {
+      RunModule();
+    }
+
+    private void RunModule()
+    {
+      var bootstrapper = new Bootstrapper();
+      bootstrapper.Run();
+    }
+  }
+}
+
+```
+
+3. Create the `Bootstrapper` class in the `Spec` project:
+
+```c#
+// Spec/Bootstrapper.cs
+
+using Prism.Modularity;
+using Prism.Unity;
+using System;
+using System.Windows;
+
+namespace PersonManagementSpec
+{
+  sealed class Bootstrapper : UnityBootstrapper
+  {
+    protected override IModuleCatalog CreateModuleCatalog()
+    {
+      return new ConfigurationModuleCatalog();
+    }
+
+    protected override void ConfigureModuleCatalog()
+    {
+      var moduleCatalog = ModuleCatalog as ModuleCatalog;
+      try
+      {
+        moduleCatalog.AddModule(typeof(PersonManagementModule.Module));
+      }
+      catch (Exception ex)
+      {
+        LogFatalException(ex);
+      }
+    }
+
+    private void LogFatalException(Exception ex)
+    {
+      Logger.Log($"Fatal error has occurred {ex.ToString()}", Prism.Logging.Category.Exception, Prism.Logging.Priority.High);
+    }
+
+    protected override void ConfigureContainer()
+    {
+      try
+      {
+        base.ConfigureContainer();
+      }
+      catch (Exception ex)
+      {
+        LogFatalException(ex);
+      }
+    }
+
+    protected override DependencyObject CreateShell()
+    {
+      // In our integration tests, we don't want to interact with the module's UI, 
+      // therefore we don't initialize it
+      return null;
+    }
+  }
+}
+```
+
+## Setup and teardown the database
+
+As the module, the test database needs to be initialized and teared down during every acceptance scenario. The database chosen for this example is just a simple text file. The whole database to be used in this example is this:
+
+```json
+// Spec/Fixtures/TestPersonsDatabase.json
+
+{
+  "DataItems": [
+    {
+      "Id": 1,
+      "FirstName": "Lorenzo",
+      "LastName": "Miguel",
+      "Title": "Dr"
+    },
+    {
+      "Id": 2,
+      "FirstName": "Salvatore",
+      "LastName": "Adamo",
+      "Title": "Singer"
+    }
+  ]
+}
+```
+
+In order to setup and tear-down the database for each scenario, we proceed this way:
+
+1. Add a new `Fixtures` folder to the `Spec` project where you put the above file.
+
+2. Complete the SpecFlow hooks like this:
+
+```c#
+// Spec/Hooks.cs
+
+using System.Collections.Specialized;
+using System.Configuration;
+using System.IO;
+using TechTalk.SpecFlow;
+
+namespace Spec
+{
+  [Binding]
+  public sealed class Hooks
+  {
+    const string DB_FIXTURE = "Fixtures/TestPersonsDatabase.json";
+
+    [BeforeScenario]
+    public void BeforeScenario()
+    {
+      InitDatabase();
+      RunModule();
+    }
+
+    private void InitDatabase()
+    {
+      var overwriteIfExists = true;
+      File.Copy(Path.GetFullPath(DB_FIXTURE), GetDatabaseFilename(), overwriteIfExists);
+    }
+
+    private void RunModule()
+    {
+      var bootstrapper = new Bootstrapper();
+      bootstrapper.Run();
+    }
+
+    [AfterScenario]
+    public void AfterScenario()
+    {
+      CleanupDatabase();
+    }
+
+    private void CleanupDatabase()
+    {
+      File.Delete(GetDatabaseFilename());
+    }
+
+    private static string GetDatabaseFilename()
+    {
+      var dbSettings = ConfigurationManager.GetSection("PersonMgmt/DatabaseSettings") as NameValueCollection;
+      var dbFilename = dbSettings["Filename"];
+      return dbFilename;
+    }
+  }
+}
 ```
 
 ## Background step

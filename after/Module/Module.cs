@@ -1,7 +1,7 @@
 ﻿using Microsoft.Practices.Unity;
 using Prism.Modularity;
 
-namespace Module
+namespace PersonManagementModule
 {
   public class Module : IModule
   {

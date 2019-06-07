@@ -1,6 +1,6 @@
 ﻿using Prism.Mvvm;
 
-namespace Module.ViewModels
+namespace PersonManagementModule.ViewModels
 {
   public class PersonViewModel : BindableBase
     {

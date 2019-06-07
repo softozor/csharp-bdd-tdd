@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace Module.Views
+namespace PersonManagementModule.Views
 {
   /// <summary>
   /// Interaction logic for PersonView.xaml
