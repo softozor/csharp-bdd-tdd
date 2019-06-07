@@ -36,15 +36,15 @@ The next sections are more or less a transcript of the video that will be publis
 
 ## Goal
 
-The goal of this presentation is to shortly introduce acceptance and unit-testing in C# / .NET / Prism. We keep things easy: no view is implemented, we exclusively focus on the module's logic. As a side-note, it would be possible to write acceptance tests for the view too, but that would be pretty time-consuming. There are interesting possibilities with the [White Testing Framework](https://teststackwhite.readthedocs.io/en/latest/) but that framework does not seem to be maintained any more and is fairly difficult to use when working with UI component bundles like [DevExpress](https://www.devexpress.com/) or [Telerik](https://www.telerik.com/). We recommend to rather implement such tests with [CodedUI](https://docs.microsoft.com/en-us/visualstudio/test/use-ui-automation-to-test-your-code?view=vs-2019) when necessary. Also, would bugs be popping up in the view, tracking them with acceptance tests might be useful under certain circumstances. 
+The goal of this presentation is to shortly introduce acceptance and unit-testing in C# / .NET / Prism. Things are kept easy: no view is implemented, focus is exclusively put on the module's logic. As a side-note, it would be possible to write acceptance tests for the view too, but that would be pretty time-consuming. There are interesting possibilities with the [White Testing Framework](https://teststackwhite.readthedocs.io/en/latest/) but that framework does not seem to be maintained any more and is fairly difficult to use when working with UI component bundles like [DevExpress](https://www.devexpress.com/) or [Telerik](https://www.telerik.com/). We recommend to rather implement such tests with [CodedUI](https://docs.microsoft.com/en-us/visualstudio/test/use-ui-automation-to-test-your-code?view=vs-2019) when necessary. However, would bugs be popping up in the view, tracking them with acceptance tests might be useful under certain circumstances. 
 
-Therefore, let's focus on a Prism module's `ViewModel`'s implementation which needs to integrate in our case with a [DataAccess](https://github.com/softozor/csharp-bdd-tdd/before/DataAccess) essentially. The [initial module's code](https://github.com/softozor/csharp-bdd-tdd/before/Module) was already prepared. It is a Prism Module project generated from Visual Studio 2017's templates downgraded to support `Prism 6.3.0`.
+Therefore, let's focus on a Prism module's `ViewModel`'s implementation which needs to integrate in our case with a [DataAccess](../before/DataAccess) essentially. The [initial module's code](https://github.com/softozor/csharp-bdd-tdd/before/Module) was already prepared. It is a Prism Module project generated from Visual Studio 2017's templates downgraded to support `Prism 6.3.0`.
 
 ## Acceptance tests preparation
 
 ### Visual Studio project configuration
 
-1. Open the pre-defined [solution](before/PersonManagementApp.sln) with Visual Studio 2017.
+1. Open the pre-defined [solution](../before/PersonManagementApp.sln) with Visual Studio 2017.
 
 2. Create a new "Unit Test Project (.NET Framework)" with name `Spec`:
 
