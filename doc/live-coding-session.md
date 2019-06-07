@@ -399,6 +399,8 @@ namespace Spec.StepDefinitions
 The problem here is that no `IDataService` instance has been provided yet. In fact, not exactly. The `PersonManagementModule.Module` has registered something:
 
 ```c#
+// Module/Module.cs
+
 public void Initialize()
 {
   _container.RegisterType<IDataService, FileDataService>();
@@ -408,6 +410,8 @@ public void Initialize()
 and the module is bootstrapped in the hooks. However, our acceptance tests won't know anything about that instance, because SpecFlow is using another [DI container](https://github.com/techtalk/SpecFlow/wiki/Context-Injection). Our current ansatz to provide our acceptance tests with the instances registered in our module is just to transfer them from one container to the other like this:
 
 ```c#
+// Spec/Hooks.cs
+
 private void ExposeType<T>(Bootstrapper bootstrapper) where T : class
 {
   var instance = bootstrapper.Container.Resolve<T>();
