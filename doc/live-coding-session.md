@@ -183,7 +183,7 @@ using Prism.Unity;
 using System;
 using System.Windows;
 
-namespace PersonManagementSpec
+namespace Spec
 {
   sealed class Bootstrapper : UnityBootstrapper
   {
