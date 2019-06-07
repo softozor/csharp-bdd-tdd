@@ -78,6 +78,14 @@ By default, the project uses MSTest.
 
 You will be provided with a feature file about a calculator adding two numbers. Just replace that specification with the above `Feature: Technical Officer manages persons`. Copy the feature with the scenarios.
 
+Also, make sure to disable SpecFlow's single file generation:
+
+![Disable SpecFlow Single File Generator](/doc/img/EnableSpecFlowSingleFileGenerator.png)
+
+And verify that the `PersonManagement.feature` file's properties look like this:
+
+![Get rid of SpecFlow custom tool](/doc/img/GetRidOfCustomTool.png)
+
 2. Initially, the feature file looks like this:
 
 ![Initial Feature File](/doc/img/InitialPersonManagementFeatureFile.png)
@@ -253,7 +261,39 @@ In order to setup and tear-down the database for each scenario, we proceed this 
 
 1. Add a new `Fixtures` folder to the `Spec` project where you put the above file.
 
-2. Complete the SpecFlow hooks like this:
+2. The database is interfaced by the [IDataService](../before/DataAccess/Services/IDataService.cs). Any parameter related to the database (e.g. the database's url) is provided in the application that will use the module. The used implementation of that interface, the [FileDataService](../before/DataAccess/Services/FileDataService.cs), is constructed in this way:
+
+```c#
+public FileDataService(IFileHandlerFactory factory)
+{
+  var dbSettings = ConfigurationManager.GetSection("PersonMgmt/DatabaseSettings") as NameValueCollection;
+  var filename = dbSettings["Filename"];
+  var fileType = dbSettings["Type"];
+  _fileHandler = factory.Create(filename, fileType);
+}
+```
+
+That means that our `Spec` project needs to provide that piece of information:
+
+```xml
+<!-- Spec/App.config -->
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <configSections>
+    <sectionGroup name="PersonMgmt">
+      <section name="DatabaseSettings" type="System.Configuration.NameValueSectionHandler"/>
+    </sectionGroup>
+  </configSections>
+  <PersonMgmt>
+    <DatabaseSettings>
+      <add key="Filename" value="TestPersonsDatabase.json"/>
+      <add key="Type" value="JSON"/>
+    </DatabaseSettings>
+  </PersonMgmt>
+</configuration>
+```
+
+3. To avoid side-effects on our database, we're better off copying our `TestPersonsDatabase.json` during our tests and deleting the `TestPersonsDatabase.json` upon scenario completion. That is exactly what the following `BeforeScenario` and `AfterScenario` hooks are all about:
 
 ```c#
 // Spec/Hooks.cs
@@ -320,36 +360,139 @@ Background: The Technical Officer is browsing through the persons' list
   Given a list of persons was persisted to the database
 ```
 
-The database is interfaced by the [IDataService](../before/DataAccess/Services/IDataService.cs). Any parameter related to the database (e.g. the database's url) is provided in the application that will use the module. The used implementation of that interface, the [FileDataService](../before/DataAccess/Services/FileDataService.cs), is constructed in this way:
+Its implementation requires the `IDataService`. Hence the `TechnicalOfficerManagesPersonSteps` needs to be updated to
 
 ```c#
-public FileDataService(IFileHandlerFactory factory)
+// Spec/StepDefinitions/TechnicalOfficerManagesPersonSteps.cs
+
+using DataAccess.Services;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
+using TechTalk.SpecFlow;
+
+namespace Spec.StepDefinitions
 {
-  var dbSettings = ConfigurationManager.GetSection("PersonMgmt/DatabaseSettings") as NameValueCollection;
-  var filename = dbSettings["Filename"];
-  var fileType = dbSettings["Type"];
-  _fileHandler = factory.Create(filename, fileType);
+  [Binding]
+  public class TechnicalOfficerManagesPersonSteps
+  {
+    readonly ScenarioContext _scenarioContext;
+    readonly IDataService _dataService;
+
+    public TechnicalOfficerManagesPersonSteps(IDataService dataService, ScenarioContext scenarioContext)
+    {
+      _dataService = dataService;
+      _scenarioContext = scenarioContext;
+    }
+
+    [Given(@"a list of persons was persisted to the database")]
+    public void GivenAListOfPersonsWasPersistedToTheDatabase()
+    {
+      var persons = _dataService.GetAllPersons();
+      Assert.IsTrue(persons.Count() > 0);
+    }
+
+    [...]
+  }
 }
 ```
 
-That means that our `Spec` project need to provide that piece of information:
+The problem here is that no `IDataService` instance has been provided yet. In fact, not exactly. The `PersonManagementModule.Module` has registered something:
 
-1. Add an "Application Configuration File" to the `Spec` project with the following content:
-
-```xml
-<?xml version="1.0" encoding="utf-8" ?>
-<configuration>
-  <configSections>
-    <sectionGroup name="PersonMgmt">
-      <section name="DatabaseSettings" type="System.Configuration.NameValueSectionHandler"/>
-    </sectionGroup>
-  </configSections>
-  <PersonMgmt>
-    <DatabaseSettings>
-      <add key="Filename" value="TestPersonsDatabase.json"/>
-      <add key="Type" value="JSON"/>
-    </DatabaseSettings>
-  </PersonMgmt>
-</configuration>
+```c#
+public void Initialize()
+{
+  _container.RegisterType<IDataService, FileDataService>();
+}
 ```
 
+and the module is bootstrapped in the hooks. However, our acceptance tests won't know anything about that instance, because SpecFlow is using another [DI container](https://github.com/techtalk/SpecFlow/wiki/Context-Injection). Our current ansatz to provide our acceptance tests with the instances registered in our module is just to transfer them from one container to the other like this:
+
+```c#
+private void ExposeType<T>(Bootstrapper bootstrapper) where T : class
+{
+  var instance = bootstrapper.Container.Resolve<T>();
+  _objectContainer.RegisterInstanceAs(instance);
+}
+```
+
+First, we resolve the interface's instance. Then, we put it into our acceptance tests' object container. There might be a more convenient way of dealing with that by means of the [SpecFlow plugins](https://github.com/techtalk/SpecFlow/wiki/Context-Injection#custom-dependency-injection-frameworks).
+
+Following our ansatz, our hooks class becomes:
+
+```c#
+// Spec/Hooks.cs
+
+using BoDi;
+using DataAccess.Services;
+using Microsoft.Practices.Unity;
+using System.Collections.Specialized;
+using System.Configuration;
+using System.IO;
+using TechTalk.SpecFlow;
+
+namespace Spec
+{
+  [Binding]
+  public sealed class Hooks
+  {
+    const string DB_FIXTURE = "Fixtures/TestPersonsDatabase.json";
+
+    readonly IObjectContainer _objectContainer;
+
+    public Hooks(IObjectContainer objectContainer)
+    {
+      _objectContainer = objectContainer;
+    }
+
+    [BeforeScenario]
+    public void BeforeScenario()
+    {
+      InitDatabase();
+      var bootstrapper = RunModule();
+      SetupStepsDependencies(bootstrapper);
+    }
+
+    private void InitDatabase()
+    {
+      var overwriteIfExists = true;
+      File.Copy(Path.GetFullPath(DB_FIXTURE), GetDatabaseFilename(), overwriteIfExists);
+    }
+
+    private Bootstrapper RunModule()
+    {
+      var bootstrapper = new Bootstrapper();
+      bootstrapper.Run();
+      return bootstrapper;
+    }
+
+    private void SetupStepsDependencies(Bootstrapper bootstrapper)
+    {
+      ExposeType<IDataService>(bootstrapper);
+    }
+
+    private void ExposeType<T>(Bootstrapper bootstrapper) where T : class
+    {
+      var instance = bootstrapper.Container.Resolve<T>();
+      _objectContainer.RegisterInstanceAs(instance);
+    }
+
+    [AfterScenario]
+    public void AfterScenario()
+    {
+      CleanupDatabase();
+    }
+
+    private void CleanupDatabase()
+    {
+      File.Delete(GetDatabaseFilename());
+    }
+
+    private static string GetDatabaseFilename()
+    {
+      var dbSettings = ConfigurationManager.GetSection("PersonMgmt/DatabaseSettings") as NameValueCollection;
+      var dbFilename = dbSettings["Filename"];
+      return dbFilename;
+    }
+  }
+}
+```

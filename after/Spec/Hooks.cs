@@ -1,4 +1,7 @@
-﻿using System.Collections.Specialized;
+﻿using BoDi;
+using DataAccess.Services;
+using Microsoft.Practices.Unity;
+using System.Collections.Specialized;
 using System.Configuration;
 using System.IO;
 using TechTalk.SpecFlow;
@@ -10,11 +13,19 @@ namespace Spec
   {
     const string DB_FIXTURE = "Fixtures/TestPersonsDatabase.json";
 
+    readonly IObjectContainer _objectContainer;
+
+    public Hooks(IObjectContainer objectContainer)
+    {
+      _objectContainer = objectContainer;
+    }
+
     [BeforeScenario]
     public void BeforeScenario()
     {
       InitDatabase();
-      RunModule();
+      var bootstrapper = RunModule();
+      SetupStepsDependencies(bootstrapper);
     }
 
     private void InitDatabase()
@@ -23,10 +34,22 @@ namespace Spec
       File.Copy(Path.GetFullPath(DB_FIXTURE), GetDatabaseFilename(), overwriteIfExists);
     }
 
-    private void RunModule()
+    private Bootstrapper RunModule()
     {
       var bootstrapper = new Bootstrapper();
       bootstrapper.Run();
+      return bootstrapper;
+    }
+
+    private void SetupStepsDependencies(Bootstrapper bootstrapper)
+    {
+      ExposeType<IDataService>(bootstrapper);
+    }
+
+    private void ExposeType<T>(Bootstrapper bootstrapper) where T : class
+    {
+      var instance = bootstrapper.Container.Resolve<T>();
+      _objectContainer.RegisterInstanceAs(instance);
     }
 
     [AfterScenario]
