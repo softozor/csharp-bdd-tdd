@@ -2,7 +2,7 @@
 
 The necessary steps towards the implementation of a feature are described in the following sections. The goal is to implement a [Prism](https://prismlibrary.github.io) module supporting the following feature:
 
-```
+```gherkin
 Feature: Technical Officer manages persons
   As a Technical Officer or an Instructor
   I want to manage the list of the people using the simulator
@@ -38,7 +38,7 @@ The next sections are more or less a transcript of the video that will be publis
 
 The goal of this presentation is to shortly introduce acceptance and unit-testing in C# / .NET / Prism. Things are kept easy: no view is implemented, focus is exclusively put on the module's logic. As a side-note, it would be possible to write acceptance tests for the view too, but that would be pretty time-consuming. There are interesting possibilities with the [White Testing Framework](https://teststackwhite.readthedocs.io/en/latest/) but that framework does not seem to be maintained any more and is fairly difficult to use when working with UI component bundles like [DevExpress](https://www.devexpress.com/) or [Telerik](https://www.telerik.com/). We recommend to rather implement such tests with [CodedUI](https://docs.microsoft.com/en-us/visualstudio/test/use-ui-automation-to-test-your-code?view=vs-2019) when necessary. However, would bugs be popping up in the view, tracking them with acceptance tests might be useful under certain circumstances. 
 
-Therefore, let's focus on a Prism module's `ViewModel`'s implementation which needs to integrate in our case with a [DataAccess](../before/DataAccess) essentially. The [initial module's code](https://github.com/softozor/csharp-bdd-tdd/before/Module) was already prepared. It is a Prism Module project generated from Visual Studio 2017's templates downgraded to support `Prism 6.3.0`.
+Therefore, let's focus on a Prism module's `ViewModel`'s implementation which needs to integrate in our case with a [DataAccess](../before/DataAccess) essentially. The [initial module's code](../before/Module) was already prepared. It is a Prism Module project generated from Visual Studio 2017's templates downgraded to support `Prism 6.3.0`.
 
 ## Acceptance tests preparation
 
@@ -86,7 +86,7 @@ Store the step definition code file in the `StepDefinitions` folder of the `Spec
 
 A typical generated step definition looks like this (depending on your SpecFlow version):
 
-```
+```c#
 [Given(@"a list of persons was persisted to the database")]
 public void GivenAListOfPersonsWasPersistedToTheDatabase()
 {
@@ -100,7 +100,7 @@ In that case, you might see the warning
 
 in which case you would just inject the `ScenarioContext` into the `TechnicalOfficerManagesPersonSteps` constructor:
 
-```
+```c#
 readonly ScenarioContext _scenarioContext;
 
 public TechnicalOfficerManagesPersonsSteps(ScenarioContext scenarioContext)
@@ -111,12 +111,56 @@ public TechnicalOfficerManagesPersonsSteps(ScenarioContext scenarioContext)
 
 and replace 
 
-```
+```c#
 ScenarioContext.Current.Pending();
 ```
 
 with
 
-```
+```c#
 _scenarioContext.Pending();
 ```
+
+## Background step
+
+First of all, note that a so-called background step is evaluated before each scenario of the current feature. In our example, this is: 
+
+```gherkin
+Background: The Technical Officer is browsing through the persons' list
+  
+  Given a list of persons was persisted to the database
+```
+
+The database is interfaced by the [IDataService](../before/DataAccess/Services/IDataService.cs). Any parameter related to the database (e.g. the database's url) is provided in the application that will use the module. The used implementation of that interface, the [FileDataService](../before/DataAccess/Services/FileDataService.cs), is constructed in this way:
+
+```c#
+public FileDataService(IFileHandlerFactory factory)
+{
+  var dbSettings = ConfigurationManager.GetSection("PersonMgmt/DatabaseSettings") as NameValueCollection;
+  var filename = dbSettings["Filename"];
+  var fileType = dbSettings["Type"];
+  _fileHandler = factory.Create(filename, fileType);
+}
+```
+
+That means that our `Spec` project need to provide that piece of information:
+
+1. Add an "Application Configuration File" to the `Spec` project with the following content:
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <configSections>
+    <sectionGroup name="PersonMgmt">
+      <section name="DatabaseSettings" type="System.Configuration.NameValueSectionHandler"/>
+    </sectionGroup>
+  </configSections>
+  <PersonMgmt>
+    <DatabaseSettings>
+      <add key="Filename" value="TestPersonsDatabase.json"/>
+      <add key="Type" value="JSON"/>
+    </DatabaseSettings>
+  </PersonMgmt>
+</configuration>
+```
+
