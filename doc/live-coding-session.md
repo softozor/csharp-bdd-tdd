@@ -78,7 +78,7 @@ By default, the project uses MSTest.
 
 ![Add new SpecFlow Feature File](/doc/img/AddNewSpecFlowFeatureFile.png)
 
-You will be provided with a feature file about a calculator adding two numbers. Just replace that specification with the above [feature](#feature- to-be-implemented). Copy the feature with the scenarios.
+You will be provided with a feature file about a calculator adding two numbers. Just replace that specification with the above [feature](https://github.com/softozor/csharp-bdd-tdd/doc/live-coding-session.md#feature- to-be-implemented). Copy the feature with the scenarios.
 
 Also, make sure to disable SpecFlow's single file generation:
 
