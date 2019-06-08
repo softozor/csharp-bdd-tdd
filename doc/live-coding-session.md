@@ -1,6 +1,8 @@
 # Live coding session plan
 
-The necessary steps towards the implementation of a feature are described in the following sections. The goal is to implement a [Prism](https://prismlibrary.github.io) module supporting the following feature:
+The necessary steps towards the implementation of a feature are described in the following sections. The goal is to implement a [Prism](https://prismlibrary.github.io) module supporting the following feature.
+
+## Feature to be implemented
 
 ```gherkin
 Feature: Technical Officer manages persons
@@ -76,7 +78,7 @@ By default, the project uses MSTest.
 
 ![Add new SpecFlow Feature File](/doc/img/AddNewSpecFlowFeatureFile.png)
 
-You will be provided with a feature file about a calculator adding two numbers. Just replace that specification with the above `Feature: Technical Officer manages persons`. Copy the feature with the scenarios.
+You will be provided with a feature file about a calculator adding two numbers. Just replace that specification with the above [feature](#feature- to-be-implemented). Copy the feature with the scenarios.
 
 Also, make sure to disable SpecFlow's single file generation:
 
