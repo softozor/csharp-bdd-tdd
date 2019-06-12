@@ -1,19 +1,16 @@
-﻿using Prism.Mvvm;
+﻿using Prism.Commands;
+using Prism.Mvvm;
+using System.Collections.ObjectModel;
 
 namespace PersonManagementModule.ViewModels
 {
   public class PersonViewModel : BindableBase
-    {
-        private string _message;
-        public string Message
-        {
-            get { return _message; }
-            set { SetProperty(ref _message, value); }
-        }
+  {
+    public ObservableCollection<PersonItem> Persons { get; set; }
+    public DelegateCommand SavePersonsCommand { get; set; }
 
-        public PersonViewModel()
-        {
-            Message = "Person View";
-        }
+    public PersonViewModel()
+    {
     }
+  }
 }

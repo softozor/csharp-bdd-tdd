@@ -261,7 +261,9 @@ As the module, the test database needs to be initialized and teared down during 
 
 In order to setup and tear-down the database for each scenario, we proceed this way:
 
-1. Add a new `Fixtures` folder to the `Spec` project where you put the above file.
+1. Add a new `Fixtures` folder to the `Spec` project where you put the above file. Make sure you copy that fixture file to the build folder by setting its properties accordingly:
+
+![Copy fixture to build folder](/doc/img/CopyFixturesToBuildFolder.png)
 
 2. The database is interfaced by the [IDataService](../before/DataAccess/Services/IDataService.cs). Any parameter related to the database (e.g. the database's url) is provided in the application that will use the module. The used implementation of that interface, the [FileDataService](../before/DataAccess/Services/FileDataService.cs), is constructed in this way:
 
@@ -398,7 +400,9 @@ namespace Spec.StepDefinitions
 }
 ```
 
-The problem here is that no `IDataService` instance has been provided yet. In fact, not exactly. The `PersonManagementModule.Module` has registered something:
+In the above `GivenAListOfPersonsWasPersistedToTheDatabase` method, all the currently persisted persons are gathered and we check that the that persons' list isn't empty.
+
+The problem in that method is that no `IDataService` instance has been provided yet. In fact, not exactly. The `PersonManagementModule.Module` has registered something:
 
 ```c#
 // Module/Module.cs
@@ -502,3 +506,403 @@ namespace Spec
   }
 }
 ```
+
+Now, if any of the acceptance tests is run, the code of the background step is evaluated without errors and an exception is thrown because of a call to
+
+```c#
+_scenarioContext.Pending();
+```
+
+## First acceptance scenario
+
+Let's now focus on the `Given` step of the first scenario
+
+```gherkin
+Scenario: The Technical Officer manually persists a new person to the database
+
+  Given the Technical Officer has added a new person
+  When she saves
+  Then the new person is persisted to the database 
+```
+
+First, let's introduce a new member variable `_viewModel` into the `TechnicalOfficerManagesPersonsSteps` class, as the above `Given` step will make use of it:
+
+```c#
+// Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
+
+namespace Spec.StepDefinitions
+{
+  [Binding]
+  public class TechnicalOfficerManagesPersonsSteps
+  {
+    readonly ScenarioContext _scenarioContext;
+    readonly IDataService _dataService;
+    readonly PersonViewModel _viewModel;
+
+    public TechnicalOfficerManagesPersonsSteps(IDataService dataService, PersonViewModel viewModel, ScenarioContext scenarioContext)
+    {
+      _viewModel = viewModel;
+      _dataService = dataService;
+      _scenarioContext = scenarioContext;
+    }
+
+    [...]
+  }
+}
+```
+
+Let's now translate the `Given` statement to code:
+
+```c#
+// Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
+
+[Given(@"the Technical Officer has added a new person")]
+public void GivenTheTechnicalOfficerHasAddedANewPerson()
+{
+  var person = new Person
+    {
+      FirstName = "My FirstName",
+      LastName = "My LastName",
+      Title = "My Title"
+    };
+  var personItem = new PersonItem(person);
+  _viewModel.Persons.Add(personItem);
+  _scenarioContext.Set(person);
+}
+```
+
+Basically, the idea is that the `PersonViewModel` wraps the POCO `Person` by mean of a `PersonItem` class. The purpose of that wrapper is to react to user input from a view, which will not be implemented here. The user somehow accesses a data grid view. Upon addition of an item to that grid view, an observable collection of persons, `PersonViewModel.Persons` is augmented with a new person. 
+
+Additionally, because the scenario's `Then` step wants to assert something about that newly added person, it is kept in the scenario context so that it can be fetched later.
+
+All that means the `PersonViewModel` needs to be initialized with the following code:
+
+```c#
+// Module/ViewModels/PersonViewModel.cs
+
+using Prism.Mvvm;
+using System.Collections.ObjectModel;
+
+namespace PersonManagementModule.ViewModels
+{
+  public class PersonViewModel : BindableBase
+  {
+    public ObservableCollection<PersonItem> Persons { get; set; }
+
+    public PersonViewModel()
+    {
+    }
+  }
+}
+```
+
+That needs the new `PersonItem` class:
+
+```c#
+// Module/ViewModels/PersonItem.cs
+
+using Models;
+using System;
+
+namespace PersonManagementModule.ViewModels
+{
+  public class PersonItem
+  {
+    public Person Model { get; set; }
+
+    public string FirstName { get => Model.FirstName; set => Model.FirstName = value; }
+
+    public string LastName { get => Model.LastName; set => Model.LastName = value; }
+
+    public string Title { get => Model.Title; set => Model.Title = value; }
+
+    public PersonItem(Person model)
+    {
+      Model = model ?? throw new NullReferenceException("Wrapped person model cannot be null.");
+    }
+  }
+}
+```
+
+Like that, the `PersonItem` is not ready to bind with a view. As already mentioned, that is not something we care about in this session. In a production settings, that `PersonItem` needs to notify about changes and keep track of data changes so that they are reflected in the model (see e.g. [WPF and MVVM: Advanced Model Treatment](https://app.pluralsight.com/library/courses/wpf-mvvm-advanced-model-treatment)). 
+
+Now, let's translate the above `When` step into code. In order to save the persons to the database, a view will usually trigger a command. That is why the `When` step would naturally be translated into this:
+
+```c#
+// Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
+
+[When(@"she saves")]
+public void WhenSheSaves()
+{
+  _viewModel.SavePersonsCommand.Execute();
+}
+```
+
+That needs addition of the `SavePersonsCommand` delegate command to the view model:
+
+```c#
+// Module/ViewModels/PersonViewModel.cs
+
+using Prism.Commands;
+using Prism.Mvvm;
+using System.Collections.ObjectModel;
+
+namespace PersonManagementModule.ViewModels
+{
+  public class PersonViewModel : BindableBase
+  {
+    public ObservableCollection<PersonItem> Persons { get; set; }
+    public DelegateCommand SavePersonsCommand { get; set; }
+
+    public PersonViewModel()
+    {
+    }
+  }
+}
+```
+
+Last, we can translate the `Then` step to assertions. We want to check that the new person we added in the `Given` step actually is stored in the database: 
+
+```c#
+// Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
+
+[Then(@"the new person is persisted to the database")]
+public void ThenTheNewPersonIsPersistedToTheDatabase()
+{
+  var newPerson = _scenarioContext.Get<Person>();
+  var persistedPersons = _dataService.GetAllPersons();
+  var isNewPersonPersistedToDatabase = persistedPersons.Any(
+    person => person.FirstName == newPerson.FirstName
+      && person.LastName == newPerson.LastName
+      && person.Title == newPerson.Title
+  );
+  Assert.IsTrue(isNewPersonPersistedToDatabase);
+}
+```
+
+First the new added person is got from the scenario context. Then the persisted data are fetched, so that the presence of the new person can be verified there. 
+
+Voilà. The first acceptance scenario was implemented. Writing that first scenario clearly showed the whole point of BDD: we were developing in an outside-in fashion, asking ourselves what pieces of software would be required to achieve our goal. We came up with the idea of bringing an `ObservableCollection` of `PersonItem`s and a `DelegateCommand` into our view model. That settles the basis of our implementation.
+
+## Acceptance test code improvements
+
+We were able to write some acceptance test code. It is, however, somehow "polluted" with unnecessary details that might prevent another developer to rapidly understand what it is we want to do. For that reason, we would like to introduce a domain-specific test framework. In addition, we will encapsulate test data generation and use a tool for that.
+
+### Domain-specific test framework
+
+Currently, it might not seem very uncomfortable to work with the code we came up with in our tests. However, with a growing suite of test scenarios, it is really necessary to introduce a domain-specific framework. Such a framework introduces helper classes / methods to improve the test code as well as its readability. In the case we are currently interested in, we think it is a good idea to introduce the following `PersonManager` that wraps the `PersonViewModel` under test:
+
+```c#
+// Spec/PersonManager.cs
+
+using Models;
+using PersonManagementModule.ViewModels;
+using TestUtils;
+
+namespace Spec
+{
+  public class PersonManager
+  {
+    readonly PersonViewModel _viewModel;
+
+    public PersonManager(PersonViewModel viewModel)
+    {
+      _viewModel = viewModel;
+    }
+
+    public Person AddNewPerson()
+    {
+      var person = new Person
+      {
+        FirstName = "My FirstName",
+        LastName = "My LastName",
+        Title = "My Title"
+      };
+      var personItem = new PersonItem(person);
+      _viewModel.Persons.Add(personItem);
+      return person;
+    }
+
+    public void Save()
+    {
+      _viewModel.SavePersonsCommand.Execute();
+    }
+  }
+}
+```
+
+That `PersonManager` class encapsulates away all the actions we want to perform in our tests. That triggers the following refactoring of the `TechnicalOfficerManagesPersonsSteps` class:
+
+```c#
+// Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
+
+using DataAccess.Services;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Models;
+using System.Linq;
+using TechTalk.SpecFlow;
+
+namespace Spec.StepDefinitions
+{
+  [Binding]
+  public class TechnicalOfficerManagesPersonsSteps
+  {
+    readonly ScenarioContext _scenarioContext;
+    readonly IDataService _dataService;
+    readonly PersonManager _personManager;
+
+    public TechnicalOfficerManagesPersonsSteps(IDataService dataService, PersonManager personManager, ScenarioContext scenarioContext)
+    {
+      _personManager = personManager;
+      _dataService = dataService;
+      _scenarioContext = scenarioContext;
+    }
+
+    [Given(@"a list of persons was persisted to the database")]
+    public void GivenAListOfPersonsWasPersistedToTheDatabase()
+    {
+      var persons = _dataService.GetAllPersons();
+      Assert.IsTrue(persons.Count() > 0);
+    }
+
+    [Given(@"the Technical Officer has added a new person")]
+    public void GivenTheTechnicalOfficerHasAddedANewPerson()
+    {
+      var person = _personManager.AddNewPerson();
+      _scenarioContext.Set(person);
+    }
+
+    [When(@"she saves")]
+    public void WhenSheSaves()
+    {
+      _personManager.Save();
+    }
+
+    [Then(@"the new person is persisted to the database")]
+    public void ThenTheNewPersonIsPersistedToTheDatabase()
+    {
+      var newPerson = _scenarioContext.Get<Person>();
+      var persistedPersons = _dataService.GetAllPersons();
+      var isNewPersonPersistedToDatabase = persistedPersons.Any(
+        person => person.FirstName == newPerson.FirstName
+          && person.LastName == newPerson.LastName
+          && person.Title == newPerson.Title
+      );
+      Assert.IsTrue(isNewPersonPersistedToDatabase);
+    }
+  }
+}
+```
+
+Any new operation to be tested through the `PersonViewModel` will from now on go through the `PersonManager`. Note that the `PersonManager` is automatically added to SpecFlow's [BoDi container](https://github.com/gasparnagy/BoDi), hence nothing needs to be additionally configured in our `Hooks` class.
+
+### Test data generation with `NBuilder`
+
+During our acceptance tests, it might be that we will need to generate test data. For example, we already needed to create a new person:
+
+```c#
+// Spec/PersonManager.cs
+
+public Person AddNewPerson()
+{
+  var person = new Person
+  {
+    FirstName = "My FirstName",
+    LastName = "My LastName",
+    Title = "My Title"
+  };
+  var personItem = new PersonItem(person);
+  _viewModel.Persons.Add(personItem);
+  return person;
+}
+```
+
+For some reasons, such code might be unpleasant. Indeed, we might want to add more than one person at some point and that would involve writing all the persons' properties by hand. Instead, what we suggest is to use the [NBuilder library](https://github.com/nbuilder/nbuilder) and to refactor the `PersonManager` like this:
+
+```c#
+// Spec/PersonManager.cs
+using Models;
+using PersonManagementModule.ViewModels;
+using TestUtils;
+
+namespace PersonManagementSpec
+{
+  public class PersonManager
+  {
+    readonly PersonViewModel _viewModel;
+    readonly NewSinglePersonGenerator _personGenerator;
+
+    public PersonManager(NewSinglePersonGenerator personGenerator, PersonViewModel viewModel)
+    {
+      _personGenerator = personGenerator;
+      _viewModel = viewModel;
+    }
+
+    public Person AddNewPerson()
+    {
+      var person = _personGenerator.Generate();
+      var personItem = new PersonItem(person);
+      _viewModel.Persons.Add(personItem);
+      return person;
+    }
+
+    [...]
+  }
+}
+```
+
+where the `NewSinglePersonGenerator` is part of the new `TestUtils` library which you need to add to the solution:
+
+![Add TestUtils library](/doc/img/AddTestUtilsLibrary.png)
+
+```c#
+// TestUtils/NewSinglePersonGenerator.cs
+
+using FizzWare.NBuilder;
+using FizzWare.NBuilder.PropertyNaming;
+using Models;
+
+namespace TestUtils
+{
+  public class NewSinglePersonGenerator
+  {
+    public NewSinglePersonGenerator()
+    {
+      BuilderSetup.SetDefaultPropertyName(new RandomValuePropertyNamer(new BuilderSettings()));
+    }
+
+    public Person Generate()
+    {
+      return Builder<Person>.CreateNew().WithInvalidId().Build();
+    }
+  }
+}
+```
+
+The `TestUtils` library needs a reference to the `NBuilder` NuGet package:
+
+![NBulider NuGet package](/doc/img/NBuilderPackage.png)
+
+In the above code snippet, we use `NBuilder` to generate a new random person with invalid id. The `WithInvalidId` method is an extension of us:
+
+```c#
+// TestUtils/TestDataBuilderExtensions.cs
+
+using FizzWare.NBuilder;
+using Models;
+
+namespace TestUtils
+{
+  public static class TestDataBuilderExtensions
+  {
+    public static ISingleObjectBuilder<Person> WithInvalidId(this ISingleObjectBuilder<Person> builder)
+    {
+      return builder.With(person => person.Id = null);
+    }
+  }
+}
+```
+
+The idea behind that extension method is to easily generate random persons with invalid ids. 
+
+With all that in place, our code is much more readable and data generation is much easier.

@@ -63,6 +63,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="ViewModels\PersonItem.cs" />
     <Compile Include="ViewModels\PersonViewModel.cs" />
     <Compile Include="Views\PersonView.xaml.cs">
       <DependentUpon>PersonView.xaml</DependentUpon>

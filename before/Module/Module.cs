@@ -16,6 +16,7 @@ namespace PersonManagementModule
     public void Initialize()
     {
       _container.RegisterType<IDataService, FileDataService>();
+      _container.RegisterType<IFileHandlerFactory, FileHandlerFactory>();
     }
   }
 }

@@ -1,5 +1,6 @@
 ﻿using DataAccess.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Models;
 using System.Linq;
 using TechTalk.SpecFlow;
 
@@ -10,9 +11,11 @@ namespace Spec.StepDefinitions
   {
     readonly ScenarioContext _scenarioContext;
     readonly IDataService _dataService;
+    readonly PersonManager _personManager;
 
-    public TechnicalOfficerManagesPersonsSteps(IDataService dataService, ScenarioContext scenarioContext)
+    public TechnicalOfficerManagesPersonsSteps(IDataService dataService, PersonManager personManager, ScenarioContext scenarioContext)
     {
+      _personManager = personManager;
       _dataService = dataService;
       _scenarioContext = scenarioContext;
     }
@@ -27,13 +30,14 @@ namespace Spec.StepDefinitions
     [Given(@"the Technical Officer has added a new person")]
     public void GivenTheTechnicalOfficerHasAddedANewPerson()
     {
-      _scenarioContext.Pending();
+      var person = _personManager.AddNewPerson();
+      _scenarioContext.Set(person);
     }
 
     [When(@"she saves")]
     public void WhenSheSaves()
     {
-      _scenarioContext.Pending();
+      _personManager.Save();
     }
 
     [When(@"the Technical Officer imports a list of persons")]
@@ -45,7 +49,14 @@ namespace Spec.StepDefinitions
     [Then(@"the new person is persisted to the database")]
     public void ThenTheNewPersonIsPersistedToTheDatabase()
     {
-      _scenarioContext.Pending();
+      var newPerson = _scenarioContext.Get<Person>();
+      var persistedPersons = _dataService.GetAllPersons();
+      var isNewPersonPersistedToDatabase = persistedPersons.Any(
+        person => person.FirstName == newPerson.FirstName
+          && person.LastName == newPerson.LastName
+          && person.Title == newPerson.Title
+      );
+      Assert.IsTrue(isNewPersonPersistedToDatabase);
     }
 
     [Then(@"they are not persisted to the database")]
