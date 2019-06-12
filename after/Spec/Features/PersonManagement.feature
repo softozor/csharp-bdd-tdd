@@ -3,9 +3,13 @@
   I want to manage the list of the people using the simulator
   in order to produce access badges.
 
-Background: The Technical Officer is browsing through the persons' list
+Background: The database is filled with persons
   
   Given a list of persons was persisted to the database 
+
+Scenario: The Technical Officer is browsing through the persons' list
+
+  Then she has access to the persisted persons
 
 Scenario: The Technical Officer manually persists a new person to the database
 

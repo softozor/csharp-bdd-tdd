@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Module", "Module\Module.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtils", "TestUtils\TestUtils.csproj", "{55D3EAAC-DFAC-4CAF-839B-EA11E975088D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,14 @@ Global
 		{55D3EAAC-DFAC-4CAF-839B-EA11E975088D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{55D3EAAC-DFAC-4CAF-839B-EA11E975088D}.Release|x64.ActiveCfg = Release|Any CPU
 		{55D3EAAC-DFAC-4CAF-839B-EA11E975088D}.Release|x64.Build.0 = Release|Any CPU
+		{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}.Debug|x64.Build.0 = Debug|Any CPU
+		{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}.Release|x64.ActiveCfg = Release|Any CPU
+		{95684E8A-5BFB-41BA-957F-F4D6236D9BF6}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

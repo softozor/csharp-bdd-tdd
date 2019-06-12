@@ -1,5 +1,7 @@
 ﻿using Models;
 using PersonManagementModule.ViewModels;
+using System.Collections.Generic;
+using System.Linq;
 using TestUtils;
 
 namespace Spec
@@ -13,6 +15,11 @@ namespace Spec
     {
       _personGenerator = personGenerator;
       _viewModel = viewModel;
+    }
+
+    public IEnumerable<Person> GetAccessiblePersons()
+    {
+      return from personItem in _viewModel.Persons select personItem.Model;
     }
 
     public Person AddNewPerson()

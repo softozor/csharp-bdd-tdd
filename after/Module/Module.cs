@@ -1,6 +1,7 @@
 ﻿using DataAccess.Handlers;
 using DataAccess.Services;
 using Microsoft.Practices.Unity;
+using PersonManagementModule.Services;
 using Prism.Modularity;
 
 namespace PersonManagementModule
@@ -18,6 +19,7 @@ namespace PersonManagementModule
     {
       _container.RegisterType<IFileHandlerFactory, FileHandlerFactory>();
       _container.RegisterType<IDataService, FileDataService>();
+      _container.RegisterType<IPersonProvider, PersonProvider>();
     }
   }
 }

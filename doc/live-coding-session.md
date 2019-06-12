@@ -1,6 +1,12 @@
-# Live coding session plan
+# Live coding session
 
 The necessary steps towards the implementation of a feature are described in the following sections. The goal is to implement a [Prism](https://prismlibrary.github.io) module supporting the following feature.
+
+## Goal
+
+The goal of this presentation is to shortly introduce acceptance and unit-testing in C# / .NET / Prism. Things are kept easy: no view is implemented, focus is exclusively put on the module's logic. As a side-note, it would be possible to write acceptance tests for the view too, but that would be pretty time-consuming. There are interesting possibilities with the [White Testing Framework](https://teststackwhite.readthedocs.io/en/latest/) but that framework does not seem to be maintained any more and is fairly difficult to use when working with UI component bundles like [DevExpress](https://www.devexpress.com/) or [Telerik](https://www.telerik.com/). We recommend to rather implement such tests with [CodedUI](https://docs.microsoft.com/en-us/visualstudio/test/use-ui-automation-to-test-your-code?view=vs-2019) when necessary. However, would bugs be popping up in the view, tracking them with acceptance tests might be useful under certain circumstances. 
+
+Therefore, let's focus on a Prism module's `ViewModel`'s implementation which needs to integrate in our case with a [DataAccess](../before/DataAccess) essentially. The [initial module's code](../before/Module) was already prepared. It is a Prism Module project generated from Visual Studio 2017's templates downgraded to support `Prism 6.3.0`.
 
 ## Feature to be implemented
 
@@ -10,9 +16,13 @@ Feature: Technical Officer manages persons
   I want to manage the list of the people using the simulator
   in order to produce access badges.
 
-Background: The Technical Officer is browsing through the persons' list
+Background: The database is filled with persons
   
   Given a list of persons was persisted to the database 
+
+Scenario: The Technical Officer is browsing through the persons' list
+
+  Then she has access to the persisted persons 
 
 Scenario: The Technical Officer manually persists a new person to the database
 
@@ -35,12 +45,6 @@ Scenario: The Technical Officer imports new persons
 ```
 
 The next sections are more or less a transcript of the video that will be published by Softozor on the topic. In the description below, we use [SpecFlow](https://specflow.org) as it is very well integrated to Visual Studio. Any other framework would also perfectly fit to our presentation. You might e.g. be interested in double-checking the new [Gauge test automation tool](https://gauge.org), which happens to be free.
-
-## Goal
-
-The goal of this presentation is to shortly introduce acceptance and unit-testing in C# / .NET / Prism. Things are kept easy: no view is implemented, focus is exclusively put on the module's logic. As a side-note, it would be possible to write acceptance tests for the view too, but that would be pretty time-consuming. There are interesting possibilities with the [White Testing Framework](https://teststackwhite.readthedocs.io/en/latest/) but that framework does not seem to be maintained any more and is fairly difficult to use when working with UI component bundles like [DevExpress](https://www.devexpress.com/) or [Telerik](https://www.telerik.com/). We recommend to rather implement such tests with [CodedUI](https://docs.microsoft.com/en-us/visualstudio/test/use-ui-automation-to-test-your-code?view=vs-2019) when necessary. However, would bugs be popping up in the view, tracking them with acceptance tests might be useful under certain circumstances. 
-
-Therefore, let's focus on a Prism module's `ViewModel`'s implementation which needs to integrate in our case with a [DataAccess](../before/DataAccess) essentially. The [initial module's code](../before/Module) was already prepared. It is a Prism Module project generated from Visual Studio 2017's templates downgraded to support `Prism 6.3.0`.
 
 ## Acceptance tests preparation
 
@@ -139,7 +143,7 @@ with
 _scenarioContext.Pending();
 ```
 
-## Make the module available to the acceptance tests
+### Make the module available to the acceptance tests
 
 The `Spec` project builds an application that will glue together all the components necessary for our module to run. In particular, it needs to bootstrap our module. Because all the acceptance tests should be independent of each others, that means the module needs to be bootstrapped before each SpecFlow scenario. This is done by defining so-called [hooks](https://specflow.org/documentation/Hooks/). To boostrap our module in our acceptance tests, perform the following steps:
 
@@ -234,7 +238,7 @@ namespace Spec
 }
 ```
 
-## Setup and teardown the database
+### Setup and teardown the database
 
 As the module, the test database needs to be initialized and teared down during every acceptance scenario. The database chosen for this example is just a simple text file. The whole database to be used in this example is this:
 
@@ -359,9 +363,9 @@ namespace Spec
 First of all, note that a so-called background step is evaluated before each scenario of the current feature. In our example, this is: 
 
 ```gherkin
-Background: The Technical Officer is browsing through the persons' list
+Background: The database is filled with persons
   
-  Given a list of persons was persisted to the database
+  Given a list of persons was persisted to the database 
 ```
 
 Its implementation requires the `IDataService`. Hence the `TechnicalOfficerManagesPersonSteps` needs to be updated to
@@ -513,9 +517,17 @@ Now, if any of the acceptance tests is run, the code of the background step is e
 _scenarioContext.Pending();
 ```
 
-## First acceptance scenario
+## Implementation of the first scenario: The Technical Officer manually persists a new person to the database
 
-Let's now focus on the `Given` step of the first scenario
+In order to implement the functionality in the BDD way, we will first write the acceptance test. Then we will write unit tests and production code in small iterations in the way depicted by the following picture:
+
+![BDD -- TDD](/doc/img/bdd-tdd.png)
+
+The success of one acceptance test will depend on the success of many unit tests supporting it.
+
+### Our first acceptance test
+
+Let's first focus on the `Given` step of the first scenario
 
 ```gherkin
 Scenario: The Technical Officer manually persists a new person to the database
@@ -525,33 +537,7 @@ Scenario: The Technical Officer manually persists a new person to the database
   Then the new person is persisted to the database 
 ```
 
-First, let's introduce a new member variable `_viewModel` into the `TechnicalOfficerManagesPersonsSteps` class, as the above `Given` step will make use of it:
-
-```c#
-// Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
-
-namespace Spec.StepDefinitions
-{
-  [Binding]
-  public class TechnicalOfficerManagesPersonsSteps
-  {
-    readonly ScenarioContext _scenarioContext;
-    readonly IDataService _dataService;
-    readonly PersonViewModel _viewModel;
-
-    public TechnicalOfficerManagesPersonsSteps(IDataService dataService, PersonViewModel viewModel, ScenarioContext scenarioContext)
-    {
-      _viewModel = viewModel;
-      _dataService = dataService;
-      _scenarioContext = scenarioContext;
-    }
-
-    [...]
-  }
-}
-```
-
-Let's now translate the `Given` statement to code:
+Let's translate the `Given` statement to code:
 
 ```c#
 // Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
@@ -682,13 +668,13 @@ public void ThenTheNewPersonIsPersistedToTheDatabase()
 
 First the new added person is got from the scenario context. Then the persisted data are fetched, so that the presence of the new person can be verified there. 
 
-Voilà. The first acceptance scenario was implemented. Writing that first scenario clearly showed the whole point of BDD: we were developing in an outside-in fashion, asking ourselves what pieces of software would be required to achieve our goal. We came up with the idea of bringing an `ObservableCollection` of `PersonItem`s and a `DelegateCommand` into our view model. That settles the basis of our implementation.
+Voilà. The first acceptance scenario has been implemented. Writing that first scenario clearly showed the whole point of BDD: we were developing in an outside-in fashion, asking ourselves what pieces of software would be required to achieve our goal. We came up with the idea of bringing an `ObservableCollection` of `PersonItem`s and a `DelegateCommand` into our view model. That settles the basis of our implementation.
 
-## Acceptance test code improvements
+### Acceptance test code improvements
 
 We were able to write some acceptance test code. It is, however, somehow "polluted" with unnecessary details that might prevent another developer to rapidly understand what it is we want to do. For that reason, we would like to introduce a domain-specific test framework. In addition, we will encapsulate test data generation and use a tool for that.
 
-### Domain-specific test framework
+#### Domain-specific test framework
 
 Currently, it might not seem very uncomfortable to work with the code we came up with in our tests. However, with a growing suite of test scenarios, it is really necessary to introduce a domain-specific framework. Such a framework introduces helper classes / methods to improve the test code as well as its readability. In the case we are currently interested in, we think it is a good idea to introduce the following `PersonManager` that wraps the `PersonViewModel` under test:
 
@@ -796,7 +782,7 @@ namespace Spec.StepDefinitions
 
 Any new operation to be tested through the `PersonViewModel` will from now on go through the `PersonManager`. Note that the `PersonManager` is automatically added to SpecFlow's [BoDi container](https://github.com/gasparnagy/BoDi), hence nothing needs to be additionally configured in our `Hooks` class.
 
-### Test data generation with `NBuilder`
+#### Test data generation with `NBuilder`
 
 During our acceptance tests, it might be that we will need to generate test data. For example, we already needed to create a new person:
 
@@ -821,6 +807,7 @@ For some reasons, such code might be unpleasant. Indeed, we might want to add mo
 
 ```c#
 // Spec/PersonManager.cs
+
 using Models;
 using PersonManagementModule.ViewModels;
 using TestUtils;
@@ -906,3 +893,398 @@ namespace TestUtils
 The idea behind that extension method is to easily generate random persons with invalid ids. 
 
 With all that in place, our code is much more readable and data generation is much easier.
+
+### Production code implementation
+
+The goal is now to let the previous acceptance scenario pass. Currently, it is not passing because most of the code is undefined. For example, the `PersonViewModel`'s `Persons` observable collection is `null` as well as its `SavePersonsCommand`.
+
+In a first step, let's add a new unit test project to our solution:
+
+![Add unit test project](/doc/img/AddUnitTestProject.png)
+
+Make sure you have the following NuGet packages installed:
+
+![Test project NuGet packages](/doc/img/TestProjectNuGetPackages.png)
+
+The [Mock library](https://github.com/Moq/moq4/wiki/Quickstart) will prove to be very useful in the coming up unit tests.
+
+Let's also rename `UnitTests1.cs` to `ViewModelTests.cs` and let's define our following test method:
+
+```c#
+// Tests/ViewModelTests.cs
+
+/// <summary>
+/// Upon saving of a new person, that new person needs to be persisted to the underlying database.
+/// </summary>
+[TestMethod]
+public void ShouldPersistNewPerson()
+{
+  // Given -- Arrange
+  var personProviderMock = new Mock<IPersonProvider>();
+  var viewModel = new PersonViewModel(personProviderMock.Object);
+  var personGenerator = new NewSinglePersonGenerator();
+  var model = personGenerator.Generate();
+  var personItem = new PersonItem(model);
+
+  // When -- Act
+  viewModel.Persons.Add(personItem);
+  viewModel.SavePersonsCommand.Execute();
+
+  // Then -- Assert
+  var personsToBeSaved = from item in viewModel.Persons select item.Model;
+  personProviderMock.Verify(provider => provider.Save(personsToBeSaved), Times.Once());
+}
+```
+
+Here above, we first create whatever is necessary for our test: a `PersonViewModel` and a new `PersonItem` in essence. Then we act on the system under test: we verify that the data are persisted. Note that we use the `NewSinglePersonGenerator` we defined as we were writing the acceptance tests.
+
+In the global code overview we came up with during the writing of the acceptance tests, we did not delve that much into the details of how our `PersonViewModel` would look like. The apparition of an `IPersonProvider` popped up upon writing that test. Indeed, the data need to come from somewhere, and that somewhere is precisely the `IPersonProvider`. The construction of the `PersonViewModel` needs to be adapted:
+
+```c#
+// Module/ViewModels/PersonViewModel.cs
+
+public class PersonViewModel : BindableBase
+{
+  readonly IPersonProvider _personProvider;
+
+  public ObservableCollection<PersonItem> Persons { get; set; }
+  public DelegateCommand SavePersonsCommand { get; set; }
+
+  public PersonViewModel(IPersonProvider personProvider)
+  {
+    _personProvider = personProvider;
+  }
+}
+```
+
+Additionally, the `IPersonProvider` needs to be defined:
+
+```c#
+// Module/Services/IPersonProvider.cs
+
+using Models;
+using System.Collections.Generic;
+
+namespace PersonManagementModule.Services
+{
+  public interface IPersonProvider
+  {
+    IEnumerable<Person> GetPersons();
+
+    void Save(IEnumerable<Person> persons);
+  }
+}
+```
+
+To let the `ViewModelTests.ShouldPersistNewPerson` test pass, we do not need to care about the `IPersonProvider` yet. Indeed, we mock it in the above test. Let's complete the `PersonViewModel` as follows:
+
+```c#
+// Module/ViewModels/PersonViewModel.cs
+
+using PersonManagementModule.Services;
+using Prism.Commands;
+using Prism.Mvvm;
+using System.Collections.ObjectModel;
+using System.Linq;
+
+namespace PersonManagementModule.ViewModels
+{
+  public class PersonViewModel : BindableBase
+  {
+    readonly IPersonProvider _personProvider;
+
+    public ObservableCollection<PersonItem> Persons { get; set; }
+
+    public PersonViewModel(IPersonProvider personProvider)
+    {
+      _personProvider = personProvider;
+
+      Persons = new ObservableCollection<PersonItem>();
+      SavePersonsCommand = new DelegateCommand(SavePersons, CanSavePersons);
+    }
+
+    public DelegateCommand SavePersonsCommand { get; set; }
+
+    private void SavePersons()
+    {
+      var personModels = from item in Persons select item.Model;
+      _personProvider.Save(personModels);
+    }
+
+    private bool CanSavePersons()
+    {
+      return true;
+    }
+  }
+}
+```
+
+Let's implement a `PersonProvider`. To do so, let's start by specifying its purpose with a few unit tests:
+
+```c#
+// Tests/PersonProviderTests.cs
+
+using DataAccess.Services;
+using FizzWare.NBuilder;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Models;
+using Moq;
+using System;
+
+namespace Tests
+{
+  [TestClass]
+  public class PersonProviderTests
+  {
+    [TestMethod]
+    [ExpectedException(typeof(NullReferenceException))]
+    public void SaveThrowsIfNullIsProvided()
+    {
+      // Given
+      var dataServiceMock = new Mock<IDataService>();
+      var provider = new PersonProvider(dataServiceMock.Object);
+
+      // When
+      provider.Save(null);
+
+      // Then: the assertions are triggered by the ExpectedException attribute
+    }
+
+    [TestMethod]
+    public void ShouldPersistPersonsUponSaving()
+    {
+      // Given
+      var dataServiceMock = new Mock<IDataService>();
+      var provider = new PersonProvider(dataServiceMock.Object);
+
+      // When
+      var persons = Builder<Person>.CreateListOfSize(10).Build();
+      provider.Save(persons);
+
+      // Then
+      dataServiceMock.Verify(service => service.SavePersons(persons), Times.Once());
+    }
+  }
+}
+```
+
+In essence, we do not want to accept to save a `null` list of `Persons` and we want to ensure that the relevant persistence API is called upon saving. The corresponding `PersonProvider` implementation goes as follows:
+
+```c#
+// Module/Services/PersonProvider.cs
+
+using DataAccess.Services;
+using Models;
+using System;
+using System.Collections.Generic;
+
+namespace PersonManagementModule.Services
+{
+  public class PersonProvider : IPersonProvider
+  {
+    readonly IDataService _dataService;
+
+    public PersonProvider(IDataService dataService)
+    {
+      _dataService = dataService;
+    }
+
+    public void Save(IEnumerable<Person> persons)
+    {
+      _dataService.SavePersons(persons ?? throw new NullReferenceException("Cannot save null list of persons"));
+    }
+
+    public IEnumerable<Person> GetPersons()
+    {
+      throw new NotImplementedException();
+    }
+  }
+}
+```
+
+The acceptance tests need to be made aware of the `IPersonProvider`. Hence, our test hooks class get upgraded with
+
+```c#
+// Spec/Hooks.cs
+
+private void SetupStepsDependencies(Bootstrapper bootstrapper)
+{
+  ExposeType<IDataService>(bootstrapper);
+  ExposeType<IPersonProvider>(bootstrapper);
+}
+```
+
+and our `Module` class registers our `PersonProvider` implementation:
+
+```c#
+// Module/Module.cs
+
+public void Initialize()
+{
+  _container.RegisterType<IFileHandlerFactory, FileHandlerFactory>();
+  _container.RegisterType<IDataService, FileDataService>();
+  _container.RegisterType<IPersonProvider, PersonProvider>();
+}
+```
+
+Upon implementation of two unit tests for the `PersonProvider` and one unit test for the `PersonViewModel`, we are now able to let the first acceptance test pass.
+
+### Unit test code refactoring
+
+Our `PersonProviderTests` exhibit some unpleasant code duplication:
+
+```c#
+// Tests/PersonProviderTests.cs
+
+// Given
+var dataServiceMock = new Mock<IDataService>();
+var provider = new PersonProvider(dataServiceMock.Object);
+```
+
+That can be factored out in a test initialization method:
+
+```c#
+// Tests/PersonProviderTests.cs
+
+[TestClass]
+public class PersonProviderTests
+{
+  Mock<IDataService> _dataServiceMock;
+  PersonProvider _provider;
+
+  [TestInitialize]
+  public void Initialize()
+  {
+    _dataServiceMock = new Mock<IDataService>();
+    _provider = new PersonProvider(_dataServiceMock.Object);
+  }
+
+  [TestMethod]
+  [ExpectedException(typeof(NullReferenceException))]
+  public void SaveThrowsIfNullIsProvided()
+  {
+    // When
+    _provider.Save(null);
+
+    // Then: the assertions are triggered by the ExpectedException attribute
+  }
+
+  [TestMethod]
+  public void ShouldPersistPersonsUponSaving()
+  {
+    // When
+    var persons = Builder<Person>.CreateListOfSize(10).Build();
+    _provider.Save(persons);
+
+    // Then
+    _dataServiceMock.Verify(service => service.SavePersons(persons), Times.Once());
+  }
+}
+```
+
+The same holds for the `ViewModelTests`, although that is not yet apparent. Let's refactor it to 
+
+```c#
+// Tests/ViewModelTests.cs
+
+[TestClass]
+public class ViewModelTests
+{
+  Mock<IPersonProvider> _personProviderMock;
+  PersonViewModel _viewModel;
+
+  [TestInitialize]
+  public void Init()
+  {
+    InitializeViewModel();
+  }
+
+  private void InitializeViewModel()
+  {
+    _personProviderMock = new Mock<IPersonProvider>();
+    _viewModel = new PersonViewModel(_personProviderMock.Object);
+  }
+
+  [TestMethod]
+  public void ShouldPersistNewPerson()
+  {
+    // Given
+    var personGenerator = new NewSinglePersonGenerator();
+    var model = personGenerator.Generate();
+    var personItem = new PersonItem(model);
+
+    // When
+    _viewModel.Persons.Add(personItem);
+    _viewModel.SavePersonsCommand.Execute();
+
+    // Then
+    var personsToBeSaved = from item in _viewModel.Persons select item.Model;
+    _personProviderMock.Verify(provider => provider.Save(personsToBeSaved), Times.Once());
+  }
+}
+```
+
+## Implementation of the second scenario: The Technical Officer is browsing through the persons' list
+
+### The acceptance test
+
+That one is an easy acceptance test, because it consists of only an assertion step:
+
+```gherkin
+Scenario: The Technical Officer is browsing through the persons' list
+
+  Then she has access to the persisted persons
+```
+
+First, let's introduce a new member variable `_viewModel` into the `TechnicalOfficerManagesPersonsSteps` class, as the above `Then` step will make use of it:
+
+```c#
+// Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
+
+namespace Spec.StepDefinitions
+{
+  [Binding]
+  public class TechnicalOfficerManagesPersonsSteps
+  {
+    readonly ScenarioContext _scenarioContext;
+    readonly IDataService _dataService;
+    readonly PersonViewModel _viewModel;
+
+    public TechnicalOfficerManagesPersonsSteps(IDataService dataService, PersonViewModel viewModel, ScenarioContext scenarioContext)
+    {
+      _viewModel = viewModel;
+      _dataService = dataService;
+      _scenarioContext = scenarioContext;
+    }
+
+    [...]
+  }
+}
+```
+
+The above `Then` step can be translated to code in the following way:
+
+```c#
+// Spec/StepDefinitions/TechnicalOfficerManagesPersonsSteps.cs
+
+[Then(@"she has access to the persisted persons")]
+public void ThenSheHasAccessToThePersistedPersons()
+{
+  var persistedPersons = _dataService.GetAllPersons().OrderBy(person => person.Id);
+  var accessiblePersons = _personManager.GetAccessiblePersons().OrderBy(person => person.Id);
+  CollectionAssert.AreEqual(persistedPersons.ToList(), accessiblePersons.ToList());
+}
+```
+
+where the `PersonManager` was upgraded with 
+
+```c#
+// Spec/PersonManager.cs
+
+public IEnumerable<Person> GetAccessiblePersons()
+{
+  return from personItem in _viewModel.Persons select personItem.Model;
+}
+```
+
+### Production code implementation
