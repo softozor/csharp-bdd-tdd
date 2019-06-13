@@ -272,6 +272,8 @@ In order to setup and tear-down the database for each scenario, we proceed this 
 2. The database is interfaced by the [IDataService](../before/DataAccess/Services/IDataService.cs). Any parameter related to the database (e.g. the database's url) is provided in the application that will use the module. The used implementation of that interface, the [FileDataService](../before/DataAccess/Services/FileDataService.cs), is constructed in this way:
 
 ```c#
+// DataAccess/Services/FileDataService.cs
+
 public FileDataService(IFileHandlerFactory factory)
 {
   var dbSettings = ConfigurationManager.GetSection("PersonMgmt/DatabaseSettings") as NameValueCollection;
@@ -285,6 +287,7 @@ That means that our `Spec` project needs to provide that piece of information:
 
 ```xml
 <!-- Spec/App.config -->
+
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <configSections>
@@ -363,6 +366,8 @@ namespace Spec
 First of all, note that a so-called background step is evaluated before each scenario of the current feature. In our example, this is: 
 
 ```gherkin
+# Spec/Features/PersonManagement.feature
+
 Background: The database is filled with persons
   
   Given a list of persons was persisted to the database 
@@ -530,6 +535,8 @@ The success of one acceptance test will depend on the success of many unit tests
 Let's first focus on the `Given` step of the first scenario
 
 ```gherkin
+# Spec/Features/PersonManagement.feature
+
 Scenario: The Technical Officer manually persists a new person to the database
 
   Given the Technical Officer has added a new person
@@ -1199,6 +1206,8 @@ In both the above test classes, the `SetupDataBuilder` method ensures that `NBui
 That one is an easy acceptance test, because it consists of only an assertion step:
 
 ```gherkin
+# Spec/Features/PersonManagement.feature
+
 Scenario: The Technical Officer is browsing through the persons' list
 
   Then she has access to the persisted persons
@@ -1325,6 +1334,8 @@ public class PersonViewModel : BindableBase
 Let's tackle the last scenario now:
 
 ```gherkin
+# Spec/Features/PersonManagement.feature
+
 Scenario: The Technical Officer imports new persons
 
   When the Technical Officer imports a list of persons 
@@ -1334,6 +1345,8 @@ Scenario: The Technical Officer imports new persons
 Let's put ourselves in the situation of the Technical Officer. She has a file that she wants to import. Let's first add that file to our `Fixtures` folder:
 
 ```json
+// Spec/Fixtures/PersonsToImport.json
+
 {
   "DataItems": [
     {
@@ -1424,7 +1437,8 @@ and where
 
 ```c#
 // Spec/PersonManager.cs
- [When(@"the Technical Officer imports a list of persons")]
+
+[When(@"the Technical Officer imports a list of persons")]
 public void WhenTheTechnicalOfficerImportsAListOfPersons()
 {
   [...]
