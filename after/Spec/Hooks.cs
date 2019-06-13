@@ -1,4 +1,5 @@
 ﻿using BoDi;
+using DataAccess.Handlers;
 using DataAccess.Services;
 using Microsoft.Practices.Unity;
 using PersonManagementModule.Services;
@@ -45,6 +46,7 @@ namespace Spec
     private void SetupStepsDependencies(Bootstrapper bootstrapper)
     {
       ExposeType<IDataService>(bootstrapper);
+      ExposeType<IFileHandlerFactory>(bootstrapper);
       ExposeType<IPersonProvider>(bootstrapper);
     }
 

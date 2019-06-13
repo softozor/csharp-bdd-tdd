@@ -1350,3 +1350,222 @@ public class PersonViewModel : BindableBase
 }
 ```
 
+## Implementation of the last scenario: The Technical Officer imports new persons
+
+### The acceptance test
+
+Let's tackle the last scenario now:
+
+```gherkin
+Scenario: The Technical Officer imports new persons
+
+  When the Technical Officer imports a list of persons 
+  Then they are not persisted to the database
+```
+
+Let's put ourselves in the situation of the Technical Officer. She has a file that she wants to import. Let's first add that file to our `Fixtures` folder:
+
+```json
+{
+  "DataItems": [
+    {
+      "Id": 11,
+      "FirstName": "Laurent",
+      "LastName": "Michel",
+      "Title": "SW Architect"
+    },
+    {
+      "Id": 22,
+      "FirstName": "Thomas",
+      "LastName": "Michel",
+      "Title": "Mr Security"
+    },
+    {
+      "Id": 33,
+      "FirstName": "Florian",
+      "LastName": "Pittet",
+      "Title": "Artist"
+    },
+    {
+      "Id": 44,
+      "FirstName": "Cédric",
+      "LastName": "Donner",
+      "Title": "Web Technologies Expert"
+    }
+  ]
+}
+```
+
+which you make sure to copy upon build, as the other fixture file `TestPersonsDatabase.json`. Then you reference it in the `TechnicalOfficerManagesPersonsSteps` class:
+
+```c#
+// Spec/TechnicalOfficerManagesPersonsSteps.cs
+
+namespace Spec.StepDefinitions
+{
+  [Binding]
+  public class TechnicalOfficerManagesPersonsSteps
+  {
+    const string FILE_TO_IMPORT = "Fixtures/PersonsToImport.json";
+
+    [...]
+  }
+}
+```
+
+Now, the above steps can be translated to code as follows:
+
+```c#
+// Spec/TechnicalOfficerManagesPersonsSteps.cs
+
+ [When(@"the Technical Officer imports a list of persons")]
+public void WhenTheTechnicalOfficerImportsAListOfPersons()
+{
+  _scenarioContext.Set(_dataService.GetAllPersons().Count(), "initialPersonsCount");
+  _personManager.Import(FILE_TO_IMPORT);
+  var personsToImport = JsonFileHandler.ReadPersons(FILE_TO_IMPORT);
+  Assert.IsTrue(personsToImport.Count() > 0);
+}
+
+[Then(@"they are not persisted to the database")]
+public void ThenTheyAreNotPersistedToTheDatabase()
+{
+  var expectedPersonsCount = _scenarioContext.Get<int>("initialPersonsCount");
+  var actualPersonsCount = _dataService.GetAllPersons().Count();
+  Assert.AreEqual(expectedPersonsCount, actualPersonsCount);
+}
+```
+
+where the `PersonManager` is augmented with
+
+```c#
+// Spec/PersonManager.cs
+
+public void Import(string filename)
+{
+  var payload = new ImportPayload()
+  {
+    Filename = filename,
+    FileType = "JSON"
+  };
+  _viewModel.ImportPersonsCommand.Execute(payload);
+}
+```
+
+The view that will bind to our model will need to specify a filename and a file type. Then, invoking the `ImportPersonsCommand` would trigger whatever is necessary. Let's already define that command in the `PersonViewModel`:
+
+```c#
+// Module/ViewModels/PersonViewModel.cs
+
+namespace PersonManagementModule.ViewModels
+{
+  public class PersonViewModel : BindableBase
+  {
+    [...]
+    public DelegateCommand<ImportPayload> ImportPersonsCommand { get; set; }
+    [...]
+  }
+}
+```
+
+as well as the `ImportPayload`
+
+```c#
+// Module/ViewModels/ImportPayload.cs
+
+namespace PersonManagementModule.ViewModels
+{
+  public class ImportPayload
+  {
+    public string Filename { get; set; }
+
+    public string FileType { get; set; }
+  }
+}
+```
+
+### Production code implementation
+
+As usual, let's support the above acceptance test with a unit test:
+
+```c#
+[TestMethod]
+public void ShouldAddImportedPersonsToObservableCollection()
+{
+  // Given
+  var fileHandlerMock = new Mock<IFileHandler>();
+  fileHandlerMock.Setup(handler => handler.ReadFile())
+    .Returns(Builder<Person>.CreateListOfSize(10, new RandomValuePropertyNamer(new BuilderSettings())).Build());
+  _fileHandlerFactoryMock.Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+    .Returns(fileHandlerMock.Object);
+
+  var listOfNewPersons = Enumerable.Empty<Person>();
+  _viewModel.Persons.CollectionChanged += (s, e) =>
+  {
+    var newPersonItem = e.NewItems[0] as PersonItem;
+    listOfNewPersons = listOfNewPersons.Append(newPersonItem.Model);
+  };
+  var persons = fileHandlerMock.Object.ReadFile();
+
+  // When
+  ImportPersonsFromFile();
+
+  // Then
+  CollectionAssert.AreEqual(persons.ToList(), listOfNewPersons.ToList());
+}
+
+private void ImportPersonsFromFile()
+{
+  var payload = new ImportPayload
+  {
+    Filename = "MyRandomFilename.json",
+    FileType = "Json"
+  };
+  _viewModel.ImportPersonsCommand.Execute(payload);
+}
+```
+
+First, we figured we'd need some kind of file handler that would read the file to be imported and interpret it as specified by its type. That file handler is already available in our `DataAccess` library. Setting up that handler is a bit trickier than anything we've done in the previous scenarios, which is the reason why we included that scenario to the session. Then, upon items addition to the `Persons` collection, we just add the new items to a list that we will use later in the assertions' section. After that, we import our data. The actual filename is meaningless, as we mocked the `FileHandlerFactory`: whatever its filename argument, the `fileHandlerMock.Object` is returned which will return the built list of 10 `Person`s with randomly filled properties. Finally, the difference between the list of added `Person`s to the `PersonViewModel` and that of `Person`s to be imported is asserted to be empty.
+
+In order to make that unit test pass, we updated the `PersonViewModel` like this:
+
+```c#
+// Module/ViewModels/PersonViewModel.cs
+
+public class PersonViewModel : BindableBase
+{
+  readonly IFileHandlerFactory _fileHandlerFactory;
+
+  [...]
+
+  public PersonViewModel(IFileHandlerFactory fileHandlerFactory, IPersonProvider personProvider)
+  {
+    _fileHandlerFactory = fileHandlerFactory;
+    _personProvider = personProvider;
+
+    LoadPersons();
+
+    SavePersonsCommand = new DelegateCommand(SavePersons, CanSavePersons);
+    ImportPersonsCommand = new DelegateCommand<ImportPayload>(ImportPersons, CanImportPersons);
+  }
+
+  [...]
+
+  public DelegateCommand<ImportPayload> ImportPersonsCommand { get; set; }
+
+  private void ImportPersons(ImportPayload payload)
+  {
+    var fileHandler = _fileHandlerFactory.Create(payload.Filename, payload.FileType);
+    var persons = fileHandler.ReadFile();
+    var newPersonItems = from person in persons select new PersonItem(person);
+    Persons.AddRange(newPersonItems);
+  }
+
+  private bool CanImportPersons(ImportPayload payload)
+  {
+    return true;
+  }
+}
+```
+
+And with that, all the acceptance and unit tests are passing.

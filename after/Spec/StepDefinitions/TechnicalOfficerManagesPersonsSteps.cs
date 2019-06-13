@@ -1,4 +1,5 @@
-﻿using DataAccess.Services;
+﻿using DataAccess.Handlers;
+using DataAccess.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using System.Linq;
@@ -9,6 +10,8 @@ namespace Spec.StepDefinitions
   [Binding]
   public class TechnicalOfficerManagesPersonsSteps
   {
+    const string FILE_TO_IMPORT = "Fixtures/PersonsToImport.json";
+
     readonly ScenarioContext _scenarioContext;
     readonly IDataService _dataService;
     readonly PersonManager _personManager;
@@ -43,7 +46,10 @@ namespace Spec.StepDefinitions
     [When(@"the Technical Officer imports a list of persons")]
     public void WhenTheTechnicalOfficerImportsAListOfPersons()
     {
-      _scenarioContext.Pending();
+      _scenarioContext.Set(_dataService.GetAllPersons().Count(), "initialPersonsCount");
+      _personManager.Import(FILE_TO_IMPORT);
+      var personsToImport = JsonFileHandler.ReadPersons(FILE_TO_IMPORT);
+      Assert.IsTrue(personsToImport.Count() > 0);
     }
 
     [Then(@"the new person is persisted to the database")]
@@ -70,7 +76,9 @@ namespace Spec.StepDefinitions
     [Then(@"they are not persisted to the database")]
     public void ThenTheyAreNotPersistedToTheDatabase()
     {
-      _scenarioContext.Pending();
+      var expectedPersonsCount = _scenarioContext.Get<int>("initialPersonsCount");
+      var actualPersonsCount = _dataService.GetAllPersons().Count();
+      Assert.AreEqual(expectedPersonsCount, actualPersonsCount);
     }
   }
 }

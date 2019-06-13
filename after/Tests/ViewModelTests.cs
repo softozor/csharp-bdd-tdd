@@ -1,4 +1,6 @@
-﻿using FizzWare.NBuilder;
+﻿using DataAccess.Handlers;
+using FizzWare.NBuilder;
+using FizzWare.NBuilder.PropertyNaming;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using Moq;
@@ -12,13 +14,20 @@ namespace Tests
   [TestClass]
   public class ViewModelTests
   {
+    Mock<IFileHandlerFactory> _fileHandlerFactoryMock;
     Mock<IPersonProvider> _personProviderMock;
     PersonViewModel _viewModel;
 
     [TestInitialize]
     public void Init()
     {
+      ResetTestDataBuilderToDefault();
       InitializeViewModel();
+    }
+
+    private void ResetTestDataBuilderToDefault()
+    {
+      BuilderSetup.ResetToDefaults();
     }
 
     private void InitializeViewModel()
@@ -26,7 +35,8 @@ namespace Tests
       _personProviderMock = new Mock<IPersonProvider>();
       _personProviderMock.Setup(provider => provider.GetPersons())
         .Returns(Builder<Person>.CreateListOfSize(10).Build());
-      _viewModel = new PersonViewModel(_personProviderMock.Object);
+      _fileHandlerFactoryMock = new Mock<IFileHandlerFactory>();
+      _viewModel = new PersonViewModel(_fileHandlerFactoryMock.Object, _personProviderMock.Object);
     }
 
     /// <summary>
@@ -63,6 +73,45 @@ namespace Tests
 
       // Then
       CollectionAssert.AreEqual(persistedPersons.ToList(), accessiblePersons.ToList());
+    }
+
+    /// <summary>
+    /// Upon importation of a persons' list, the new persons are added to the <see cref="PersonViewModel"/>'s
+    /// <see cref="PersonViewModel.Persons">observable collection</see> with invalid IDs.
+    /// </summary>
+    [TestMethod]
+    public void ShouldAddImportedPersonsToObservableCollection()
+    {
+      // Given
+      var fileHandlerMock = new Mock<IFileHandler>();
+      fileHandlerMock.Setup(handler => handler.ReadFile())
+        .Returns(Builder<Person>.CreateListOfSize(10, new RandomValuePropertyNamer(new BuilderSettings())).Build());
+      _fileHandlerFactoryMock.Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+        .Returns(fileHandlerMock.Object);
+
+      var listOfNewPersons = Enumerable.Empty<Person>();
+      _viewModel.Persons.CollectionChanged += (s, e) =>
+      {
+        var newPersonItem = e.NewItems[0] as PersonItem;
+        listOfNewPersons = listOfNewPersons.Append(newPersonItem.Model);
+      };
+      var persons = fileHandlerMock.Object.ReadFile();
+
+      // When
+      ImportPersonsFromFile();
+
+      // Then
+      CollectionAssert.AreEqual(persons.ToList(), listOfNewPersons.ToList());
+    }
+
+    private void ImportPersonsFromFile()
+    {
+      var payload = new ImportPayload
+      {
+        Filename = "MyRandomFilename.json",
+        FileType = "Json"
+      };
+      _viewModel.ImportPersonsCommand.Execute(payload);
     }
   }
 }
