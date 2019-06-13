@@ -1288,3 +1288,65 @@ public IEnumerable<Person> GetAccessiblePersons()
 ```
 
 ### Production code implementation
+
+We need to ensure that the persons' data are loaded upon construction of the `PersonViewModel`. Let's first modify our `ViewModelTests` initialization a bit:
+
+```c#
+// Tests/ViewModelTests.cs
+
+private void InitializeViewModel()
+{
+  _personProviderMock = new Mock<IPersonProvider>();
+  _personProviderMock.Setup(provider => provider.GetPersons())
+    .Returns(Builder<Person>.CreateListOfSize(10).Build());
+  _viewModel = new PersonViewModel(_personProviderMock.Object);
+}
+```
+
+That assumes there are data persisted to the database. Then, write a unit test checking that the persisted data are accessible from the `PersonViewModel`:
+
+```c#
+// Tests/ViewModelTests.cs
+
+[TestMethod]
+public void ShouldDisplayPersistedPersons()
+{
+  // Given
+  var persistedPersons = _personProviderMock.Object.GetPersons();
+
+  // When
+  var accessiblePersons = from personItem in _viewModel.Persons select personItem.Model;
+
+  // Then
+  CollectionAssert.AreEqual(persistedPersons.ToList(), accessiblePersons.ToList());
+}
+```
+
+Of course, that test does not pass because no data is loaded upon `PersonViewModel` construction. Let's fix that:
+
+```c#
+// Module/ViewModels/PersonViewModel.cs
+
+public class PersonViewModel : BindableBase
+{
+  [...]
+
+  public PersonViewModel(IPersonProvider personProvider)
+  {
+    _personProvider = personProvider;
+
+    LoadPersons();
+
+    SavePersonsCommand = new DelegateCommand(SavePersons, CanSavePersons);
+  }
+
+  private void LoadPersons()
+  {
+    var personItemList = from model in _personProvider.GetPersons() select new PersonItem(model);
+    Persons = new ObservableCollection<PersonItem>(personItemList);
+  }
+
+  [...]
+}
+```
+

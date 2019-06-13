@@ -16,8 +16,15 @@ namespace PersonManagementModule.ViewModels
     {
       _personProvider = personProvider;
 
-      Persons = new ObservableCollection<PersonItem>();
+      LoadPersons();
+
       SavePersonsCommand = new DelegateCommand(SavePersons, CanSavePersons);
+    }
+
+    private void LoadPersons()
+    {
+      var personItemList = from model in _personProvider.GetPersons() select new PersonItem(model);
+      Persons = new ObservableCollection<PersonItem>(personItemList);
     }
 
     #region SavePersons

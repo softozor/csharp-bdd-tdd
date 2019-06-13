@@ -46,14 +46,6 @@ namespace Spec.StepDefinitions
       _scenarioContext.Pending();
     }
 
-    [Then(@"she has access to the persisted persons")]
-    public void ThenSheHasAccessToThePersistedPersons()
-    {
-      var persistedPersons = _dataService.GetAllPersons().OrderBy(person => person.Id);
-      var accessiblePersons = _personManager.GetAccessiblePersons().OrderBy(person => person.Id);
-      CollectionAssert.AreEqual(persistedPersons.ToList(), accessiblePersons.ToList());
-    }
-
     [Then(@"the new person is persisted to the database")]
     public void ThenTheNewPersonIsPersistedToTheDatabase()
     {
@@ -65,6 +57,14 @@ namespace Spec.StepDefinitions
           && person.Title == newPerson.Title
       );
       Assert.IsTrue(isNewPersonPersistedToDatabase);
+    }
+
+    [Then(@"she has access to the persisted persons")]
+    public void ThenSheHasAccessToThePersistedPersons()
+    {
+      var persistedPersons = _dataService.GetAllPersons().OrderBy(person => person.Id);
+      var accessiblePersons = _personManager.GetAccessiblePersons().OrderBy(person => person.Id);
+      CollectionAssert.AreEqual(persistedPersons.ToList(), accessiblePersons.ToList());
     }
 
     [Then(@"they are not persisted to the database")]

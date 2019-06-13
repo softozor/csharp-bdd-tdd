@@ -21,7 +21,7 @@ namespace PersonManagementModule.Services
 
     public IEnumerable<Person> GetPersons()
     {
-      throw new NotImplementedException();
+      return _dataService.GetAllPersons();
     }
   }
 }

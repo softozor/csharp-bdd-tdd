@@ -7,10 +7,6 @@ Background: The database is filled with persons
   
   Given a list of persons was persisted to the database 
 
-Scenario: The Technical Officer is browsing through the persons' list
-
-  Then she has access to the persisted persons
-
 Scenario: The Technical Officer manually persists a new person to the database
 
   In addition to importing person data from a file, the Technical Officer can 
@@ -22,6 +18,10 @@ Scenario: The Technical Officer manually persists a new person to the database
   Given the Technical Officer has added a new person
   When she saves
   Then the new person is persisted to the database 
+
+Scenario: The Technical Officer is browsing through the persons' list
+
+  Then she has access to the persisted persons
 
 Scenario: The Technical Officer imports new persons
 

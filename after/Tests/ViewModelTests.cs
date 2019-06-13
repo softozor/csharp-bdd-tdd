@@ -1,4 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using FizzWare.NBuilder;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Models;
 using Moq;
 using PersonManagementModule.Services;
 using PersonManagementModule.ViewModels;
@@ -22,6 +24,8 @@ namespace Tests
     private void InitializeViewModel()
     {
       _personProviderMock = new Mock<IPersonProvider>();
+      _personProviderMock.Setup(provider => provider.GetPersons())
+        .Returns(Builder<Person>.CreateListOfSize(10).Build());
       _viewModel = new PersonViewModel(_personProviderMock.Object);
     }
 
@@ -43,6 +47,22 @@ namespace Tests
       // Then
       var personsToBeSaved = from item in _viewModel.Persons select item.Model;
       _personProviderMock.Verify(provider => provider.Save(personsToBeSaved), Times.Once());
+    }
+
+    /// <summary>
+    /// Upon <see cref="PersonViewModel"/> construction, the persisted data need to be loaded in the <see cref="PersonViewModel.Persons"/> collection.
+    /// </summary>
+    [TestMethod]
+    public void ShouldDisplayPersistedPersons()
+    {
+      // Given
+      var persistedPersons = _personProviderMock.Object.GetPersons();
+
+      // When
+      var accessiblePersons = from personItem in _viewModel.Persons select personItem.Model;
+
+      // Then
+      CollectionAssert.AreEqual(persistedPersons.ToList(), accessiblePersons.ToList());
     }
   }
 }

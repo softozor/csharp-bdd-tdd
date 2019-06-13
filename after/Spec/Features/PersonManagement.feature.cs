@@ -97,23 +97,6 @@ namespace Spec.Features
         }
         
         [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute()]
-        [Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("The Technical Officer is browsing through the persons\' list")]
-        [Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "Technical Officer manages persons")]
-        public virtual void TheTechnicalOfficerIsBrowsingThroughThePersonsList()
-        {
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("The Technical Officer is browsing through the persons\' list", null, ((string[])(null)));
-#line 10
-this.ScenarioInitialize(scenarioInfo);
-            this.ScenarioStart();
-#line 6
-this.FeatureBackground();
-#line 12
-  testRunner.Then("she has access to the persisted persons", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
-#line hidden
-            this.ScenarioCleanup();
-        }
-        
-        [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute()]
         [Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("The Technical Officer manually persists a new person to the database")]
         [Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "Technical Officer manages persons")]
         public virtual void TheTechnicalOfficerManuallyPersistsANewPersonToTheDatabase()
@@ -123,17 +106,34 @@ this.FeatureBackground();
   add a new person. That person is then stored in the application. The Technical 
   Officer finally needs to save in order to definitely persist the person to 
   the database. ", ((string[])(null)));
-#line 14
+#line 10
 this.ScenarioInitialize(scenarioInfo);
             this.ScenarioStart();
 #line 6
 this.FeatureBackground();
-#line 22
+#line 18
   testRunner.Given("the Technical Officer has added a new person", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
-#line 23
+#line 19
   testRunner.When("she saves", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
-#line 24
+#line 20
   testRunner.Then("the new person is persisted to the database", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line hidden
+            this.ScenarioCleanup();
+        }
+        
+        [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute()]
+        [Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("The Technical Officer is browsing through the persons\' list")]
+        [Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "Technical Officer manages persons")]
+        public virtual void TheTechnicalOfficerIsBrowsingThroughThePersonsList()
+        {
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("The Technical Officer is browsing through the persons\' list", null, ((string[])(null)));
+#line 22
+this.ScenarioInitialize(scenarioInfo);
+            this.ScenarioStart();
+#line 6
+this.FeatureBackground();
+#line 24
+  testRunner.Then("she has access to the persisted persons", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             this.ScenarioCleanup();
         }
