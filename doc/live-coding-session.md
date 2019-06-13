@@ -547,6 +547,7 @@ public void GivenTheTechnicalOfficerHasAddedANewPerson()
 {
   var person = new Person
     {
+      Id = 1, 
       FirstName = "My FirstName",
       LastName = "My LastName",
       Title = "My Title"
@@ -612,7 +613,7 @@ namespace PersonManagementModule.ViewModels
 }
 ```
 
-Like that, the `PersonItem` is not ready to bind with a view. As already mentioned, that is not something we care about in this session. In a production settings, that `PersonItem` needs to notify about changes and keep track of data changes so that they are reflected in the model (see e.g. [WPF and MVVM: Advanced Model Treatment](https://app.pluralsight.com/library/courses/wpf-mvvm-advanced-model-treatment)). 
+Like that, the `PersonItem` is not ready to bind with a view. As already mentionned, that is not something we care about in this session. In a production settings, that `PersonItem` needs to notify about changes and keep track of data changes so that they are reflected in the model (see e.g. [WPF and MVVM: Advanced Model Treatment](https://app.pluralsight.com/library/courses/wpf-mvvm-advanced-model-treatment)). 
 
 Now, let's translate the above `When` step into code. In order to save the persons to the database, a view will usually trigger a command. That is why the `When` step would naturally be translated into this:
 
@@ -660,15 +661,13 @@ public void ThenTheNewPersonIsPersistedToTheDatabase()
   var newPerson = _scenarioContext.Get<Person>();
   var persistedPersons = _dataService.GetAllPersons();
   var isNewPersonPersistedToDatabase = persistedPersons.Any(
-    person => person.FirstName == newPerson.FirstName
-      && person.LastName == newPerson.LastName
-      && person.Title == newPerson.Title
+    person => person.Equals(newPerson)
   );
   Assert.IsTrue(isNewPersonPersistedToDatabase);
 }
 ```
 
-First the new added person is got from the scenario context. Then the persisted data are fetched, so that the presence of the new person can be verified there. 
+First, the new added person is got from the scenario context. Then, the persisted data are fetched, so that the presence of the new person can be verified there. 
 
 Voilà. The first acceptance scenario has been implemented. Writing that first scenario clearly showed the whole point of BDD: we were developing in an outside-in fashion, asking ourselves what pieces of software would be required to achieve our goal. We came up with the idea of bringing an `ObservableCollection` of `PersonItem`s and a `DelegateCommand` into our view model. That settles the basis of our implementation.
 
@@ -773,9 +772,7 @@ namespace Spec.StepDefinitions
       var newPerson = _scenarioContext.Get<Person>();
       var persistedPersons = _dataService.GetAllPersons();
       var isNewPersonPersistedToDatabase = persistedPersons.Any(
-        person => person.FirstName == newPerson.FirstName
-          && person.LastName == newPerson.LastName
-          && person.Title == newPerson.Title
+        person => person.Equals(newPerson)
       );
       Assert.IsTrue(isNewPersonPersistedToDatabase);
     }
@@ -796,6 +793,7 @@ public Person AddNewPerson()
 {
   var person = new Person
   {
+    Id = 1,
     FirstName = "My FirstName",
     LastName = "My LastName",
     Title = "My Title"
@@ -873,17 +871,13 @@ Let's also rename `UnitTests1.cs` to `ViewModelTests.cs` and let's define our fo
 ```c#
 // Tests/ViewModelTests.cs
 
-/// <summary>
-/// Upon saving of a new person, that new person needs to be persisted to the underlying database.
-/// </summary>
 [TestMethod]
 public void ShouldPersistNewPerson()
 {
   // Given -- Arrange
   var personProviderMock = new Mock<IPersonProvider>();
   var viewModel = new PersonViewModel(personProviderMock.Object);
-  var personGenerator = new NewSinglePersonGenerator();
-  var model = personGenerator.Generate();
+  var model = Builder<Person>.CreateNew().Build();
   var personItem = new PersonItem(model);
 
   // When -- Act
@@ -896,7 +890,7 @@ public void ShouldPersistNewPerson()
 }
 ```
 
-Here above, we first create whatever is necessary for our test: a `PersonViewModel` and a new `PersonItem` in essence. Then we act on the system under test: we verify that the data are persisted. Note that we use the `NewSinglePersonGenerator` we defined as we were writing the acceptance tests.
+Here above, we first create whatever is necessary for our test: a `PersonViewModel` and a new `PersonItem` in essence. Then we act on the system under test: we verify that the data are persisted.
 
 In the global code overview we came up with during the writing of the acceptance tests, we did not delve that much into the details of how our `PersonViewModel` would look like. The apparition of an `IPersonProvider` popped up upon writing that test. Indeed, the data need to come from somewhere, and that somewhere is precisely the `IPersonProvider`. The construction of the `PersonViewModel` needs to be adapted:
 
@@ -1182,8 +1176,7 @@ public class ViewModelTests
   public void ShouldPersistNewPerson()
   {
     // Given
-    var personGenerator = new NewSinglePersonGenerator();
-    var model = personGenerator.Generate();
+    var model = Builder<Person>.CreateNew().Build();
     var personItem = new PersonItem(model);
 
     // When
@@ -1393,7 +1386,7 @@ Now, the above steps can be translated to code as follows:
 ```c#
 // Spec/TechnicalOfficerManagesPersonsSteps.cs
 
- [When(@"the Technical Officer imports a list of persons")]
+[When(@"the Technical Officer imports a list of persons")]
 public void WhenTheTechnicalOfficerImportsAListOfPersons()
 {
   _scenarioContext.Set(_dataService.GetAllPersons().Count(), "initialPersonsCount");
@@ -1426,6 +1419,20 @@ public void Import(string filename)
   _viewModel.ImportPersonsCommand.Execute(payload);
 }
 ```
+
+and where 
+
+```c#
+// Spec/PersonManager.cs
+ [When(@"the Technical Officer imports a list of persons")]
+public void WhenTheTechnicalOfficerImportsAListOfPersons()
+{
+  [...]
+  Assert.IsTrue(personsToImport.Count() > 0);
+}
+```
+
+is a purely defensive statement that guarantees that we really load a file with a non-empty list of `Person`s.
 
 The view that will bind to our model will need to specify a filename and a file type. Then, invoking the `ImportPersonsCommand` would trigger whatever is necessary. Let's already define that command in the `PersonViewModel`:
 

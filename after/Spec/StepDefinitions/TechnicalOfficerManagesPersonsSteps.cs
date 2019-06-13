@@ -58,9 +58,7 @@ namespace Spec.StepDefinitions
       var newPerson = _scenarioContext.Get<Person>();
       var persistedPersons = _dataService.GetAllPersons();
       var isNewPersonPersistedToDatabase = persistedPersons.Any(
-        person => person.FirstName == newPerson.FirstName
-          && person.LastName == newPerson.LastName
-          && person.Title == newPerson.Title
+        person => person.Equals(newPerson)
       );
       Assert.IsTrue(isNewPersonPersistedToDatabase);
     }
