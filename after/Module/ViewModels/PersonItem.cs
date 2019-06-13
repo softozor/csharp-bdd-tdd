@@ -7,6 +7,8 @@ namespace PersonManagementModule.ViewModels
   {
     public Person Model { get; set; }
 
+    public uint Id { get => Model.Id; set => Model.Id = value; }
+
     public string FirstName { get => Model.FirstName; set => Model.FirstName = value; }
 
     public string LastName { get => Model.LastName; set => Model.LastName = value; }

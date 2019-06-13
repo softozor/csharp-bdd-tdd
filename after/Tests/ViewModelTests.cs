@@ -7,7 +7,6 @@ using Moq;
 using PersonManagementModule.Services;
 using PersonManagementModule.ViewModels;
 using System.Linq;
-using TestUtils;
 
 namespace Tests
 {
@@ -21,13 +20,13 @@ namespace Tests
     [TestInitialize]
     public void Init()
     {
-      ResetTestDataBuilderToDefault();
+      SetupDataBuilder();
       InitializeViewModel();
     }
 
-    private void ResetTestDataBuilderToDefault()
+    private void SetupDataBuilder()
     {
-      BuilderSetup.ResetToDefaults();
+      BuilderSetup.SetDefaultPropertyName(new RandomValuePropertyNamer(new BuilderSettings()));
     }
 
     private void InitializeViewModel()
@@ -46,8 +45,7 @@ namespace Tests
     public void ShouldPersistNewPerson()
     {
       // Given
-      var personGenerator = new NewSinglePersonGenerator();
-      var model = personGenerator.Generate();
+      var model = Builder<Person>.CreateNew().Build();
       var personItem = new PersonItem(model);
 
       // When
@@ -85,7 +83,7 @@ namespace Tests
       // Given
       var fileHandlerMock = new Mock<IFileHandler>();
       fileHandlerMock.Setup(handler => handler.ReadFile())
-        .Returns(Builder<Person>.CreateListOfSize(10, new RandomValuePropertyNamer(new BuilderSettings())).Build());
+        .Returns(Builder<Person>.CreateListOfSize(10).Build());
       _fileHandlerFactoryMock.Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
         .Returns(fileHandlerMock.Object);
 

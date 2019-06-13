@@ -596,6 +596,8 @@ namespace PersonManagementModule.ViewModels
   {
     public Person Model { get; set; }
 
+    public uint Id { get => Model.Id; set => Model.Id = value; }
+
     public string FirstName { get => Model.FirstName; set => Model.FirstName = value; }
 
     public string LastName { get => Model.LastName; set => Model.LastName = value; }
@@ -700,6 +702,7 @@ namespace Spec
     {
       var person = new Person
       {
+        Id = 1,
         FirstName = "My FirstName",
         LastName = "My LastName",
         Title = "My Title"
@@ -808,6 +811,8 @@ For some reasons, such code might be unpleasant. Indeed, we might want to add mo
 ```c#
 // Spec/PersonManager.cs
 
+using FizzWare.NBuilder;
+using FizzWare.NBuilder.PropertyNaming;
 using Models;
 using PersonManagementModule.ViewModels;
 using TestUtils;
@@ -817,17 +822,22 @@ namespace PersonManagementSpec
   public class PersonManager
   {
     readonly PersonViewModel _viewModel;
-    readonly NewSinglePersonGenerator _personGenerator;
 
-    public PersonManager(NewSinglePersonGenerator personGenerator, PersonViewModel viewModel)
+    public PersonManager(PersonViewModel viewModel)
     {
-      _personGenerator = personGenerator;
       _viewModel = viewModel;
+
+      SetupDataBuilder();
+    }
+
+    private void SetupDataBuilder()
+    {
+      BuilderSetup.SetDefaultPropertyName(new RandomValuePropertyNamer(new BuilderSettings()));
     }
 
     public Person AddNewPerson()
     {
-      var person = _personGenerator.Generate();
+      var person = Builder<Person>.CreateNew().Build();
       var personItem = new PersonItem(person);
       _viewModel.Persons.Add(personItem);
       return person;
@@ -838,59 +848,9 @@ namespace PersonManagementSpec
 }
 ```
 
-where the `NewSinglePersonGenerator` is part of the new `TestUtils` library which you need to add to the solution:
-
-![Add TestUtils library](/doc/img/AddTestUtilsLibrary.png)
-
-```c#
-// TestUtils/NewSinglePersonGenerator.cs
-
-using FizzWare.NBuilder;
-using FizzWare.NBuilder.PropertyNaming;
-using Models;
-
-namespace TestUtils
-{
-  public class NewSinglePersonGenerator
-  {
-    public NewSinglePersonGenerator()
-    {
-      BuilderSetup.SetDefaultPropertyName(new RandomValuePropertyNamer(new BuilderSettings()));
-    }
-
-    public Person Generate()
-    {
-      return Builder<Person>.CreateNew().WithInvalidId().Build();
-    }
-  }
-}
-```
-
-The `TestUtils` library needs a reference to the `NBuilder` NuGet package:
+The `Spec` project needs a reference to the `NBuilder` NuGet package:
 
 ![NBulider NuGet package](/doc/img/NBuilderPackage.png)
-
-In the above code snippet, we use `NBuilder` to generate a new random person with invalid id. The `WithInvalidId` method is an extension of us:
-
-```c#
-// TestUtils/TestDataBuilderExtensions.cs
-
-using FizzWare.NBuilder;
-using Models;
-
-namespace TestUtils
-{
-  public static class TestDataBuilderExtensions
-  {
-    public static ISingleObjectBuilder<Person> WithInvalidId(this ISingleObjectBuilder<Person> builder)
-    {
-      return builder.With(person => person.Id = null);
-    }
-  }
-}
-```
-
-The idea behind that extension method is to easily generate random persons with invalid ids. 
 
 With all that in place, our code is much more readable and data generation is much easier.
 
@@ -1157,6 +1117,13 @@ public class PersonProviderTests
   {
     _dataServiceMock = new Mock<IDataService>();
     _provider = new PersonProvider(_dataServiceMock.Object);
+
+    SetupDataBuilder();
+  }
+
+  private void SetupDataBuilder()
+  {
+    BuilderSetup.SetDefaultPropertyName(new RandomValuePropertyNamer(new BuilderSettings()));
   }
 
   [TestMethod]
@@ -1197,6 +1164,12 @@ public class ViewModelTests
   public void Init()
   {
     InitializeViewModel();
+    SetupDataBuilder();
+  }
+
+  private void SetupDataBuilder()
+  {
+    BuilderSetup.SetDefaultPropertyName(new RandomValuePropertyNamer(new BuilderSettings()));
   }
 
   private void InitializeViewModel()
@@ -1223,6 +1196,8 @@ public class ViewModelTests
   }
 }
 ```
+
+In both the above test classes, the `SetupDataBuilder` method ensures that `NBuilder` is setup in such a way that it generates random data.
 
 ## Implementation of the second scenario: The Technical Officer is browsing through the persons' list
 
@@ -1489,13 +1464,15 @@ namespace PersonManagementModule.ViewModels
 As usual, let's support the above acceptance test with a unit test:
 
 ```c#
+// Tests/ViewModelTests.cs
+
 [TestMethod]
 public void ShouldAddImportedPersonsToObservableCollection()
 {
   // Given
   var fileHandlerMock = new Mock<IFileHandler>();
   fileHandlerMock.Setup(handler => handler.ReadFile())
-    .Returns(Builder<Person>.CreateListOfSize(10, new RandomValuePropertyNamer(new BuilderSettings())).Build());
+    .Returns(Builder<Person>.CreateListOfSize(10).Build());
   _fileHandlerFactoryMock.Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
     .Returns(fileHandlerMock.Object);
 

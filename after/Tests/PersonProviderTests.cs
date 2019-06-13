@@ -1,5 +1,6 @@
 ﻿using DataAccess.Services;
 using FizzWare.NBuilder;
+using FizzWare.NBuilder.PropertyNaming;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using Moq;
@@ -19,6 +20,13 @@ namespace Tests
     {
       _dataServiceMock = new Mock<IDataService>();
       _provider = new PersonProvider(_dataServiceMock.Object);
+
+      SetupDataBuilder();
+    }
+
+    private void SetupDataBuilder()
+    {
+      BuilderSetup.SetDefaultPropertyName(new RandomValuePropertyNamer(new BuilderSettings()));
     }
 
     [TestMethod]

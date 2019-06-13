@@ -1,4 +1,5 @@
-﻿using DataAccess.Services;
+﻿using DataAccess.Handlers;
+using DataAccess.Services;
 using Microsoft.Practices.Unity;
 using Prism.Modularity;
 

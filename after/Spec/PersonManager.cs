@@ -1,20 +1,26 @@
-﻿using Models;
+﻿using FizzWare.NBuilder;
+using FizzWare.NBuilder.PropertyNaming;
+using Models;
 using PersonManagementModule.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
-using TestUtils;
 
 namespace Spec
 {
   public class PersonManager
   {
     readonly PersonViewModel _viewModel;
-    readonly NewSinglePersonGenerator _personGenerator;
 
-    public PersonManager(NewSinglePersonGenerator personGenerator, PersonViewModel viewModel)
+    public PersonManager(PersonViewModel viewModel)
     {
-      _personGenerator = personGenerator;
       _viewModel = viewModel;
+
+      SetupDataBuilder();
+    }
+
+    private void SetupDataBuilder()
+    {
+      BuilderSetup.SetDefaultPropertyName(new RandomValuePropertyNamer(new BuilderSettings()));
     }
 
     public IEnumerable<Person> GetAccessiblePersons()
@@ -24,7 +30,7 @@ namespace Spec
 
     public Person AddNewPerson()
     {
-      var person = _personGenerator.Generate();
+      var person = Builder<Person>.CreateNew().Build();
       var personItem = new PersonItem(person);
       _viewModel.Persons.Add(personItem);
       return person;

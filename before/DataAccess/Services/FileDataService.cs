@@ -35,20 +35,7 @@ namespace DataAccess.Services
     /// <exception cref="System.NullReferenceException"><paramref name="persons" /> is null</exception>
     public void SavePersons(IEnumerable<Person> persons)
     {
-      if(persons == null)
-        throw new NullReferenceException();
-      persons = IndexPersons(persons);
-      _fileHandler.WriteFile(persons);
-    }
-
-    IEnumerable<Person> IndexPersons(IEnumerable<Person> persons)
-    {
-      var startIdx = 0;
-      return persons.Select(person => 
-      {
-        person.Id = startIdx++;
-        return person;
-      });
+      _fileHandler.WriteFile(persons ?? throw new NullReferenceException());
     }
   }
 }
