@@ -60,7 +60,7 @@ By default, the project uses MSTest.
 
 3. Get rid of the `UnitTest1.cs` that is automatically added to the project.
 
-4. Install SpecFlow in the `Spec` project:
+4. Install SpecFlow and `WindowsBase` in the `Spec` project:
 
 ![Install SpecFlow](/doc/img/InstallSpecFlow.png)
 
