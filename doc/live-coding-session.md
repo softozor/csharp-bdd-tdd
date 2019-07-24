@@ -64,27 +64,17 @@ By default, the project uses MSTest.
 
 ![Install SpecFlow](/doc/img/InstallSpecFlow.png)
 
-5. Add a reference to the TechTalk.SpecFlow dll **[IS THAT REALLY NECESSARY?]** :
+5. Install `Prism.Unity` (6.3.0) NuGet package in the `Spec` project.
 
-![Add TechTalk SpecFlow reference](/doc/img/AddTechTalkSpecFlowReference.png)
+6. Provide the `Spec` project with a reference to the `Module`, `DataAccess`, and `Models` projects.
 
-6. Install `Prism.Unity` (6.3.0) NuGet package in the `Spec` project.
+7. Add a new folder `Features` to the `Spec` project.
 
-7. Provide the `Spec` project with a reference to the `Module`, `DataAccess`, and `Models` projects.
-
-8. Add a new folder `Features` to the `Spec` project.
-
-9. Create a folder `StepDefinitions` in the `Spec` project.
+8. Create a folder `StepDefinitions` in the `Spec` project.
 
 ### Feature initialization
 
-1. Add a new "SpecFlow Feature File" to the `Features` folder of the `Spec` project: 
-
-![Add new SpecFlow Feature File](/doc/img/AddNewSpecFlowFeatureFile.png)
-
-You will be provided with a feature file about a calculator adding two numbers. Just replace that specification with the above [feature](https://github.com/softozor/csharp-bdd-tdd/blob/master/doc/live-coding-session.md#feature-to-be-implemented). Copy the feature with the scenarios.
-
-Also, make sure to disable SpecFlow's single file generation:
+1. Disable SpecFlow's single file generation:
 
 ![Disable SpecFlow Single File Generator](/doc/img/EnableSpecFlowSingleFileGenerator.png)
 
@@ -92,13 +82,19 @@ And verify that the `PersonManagement.feature` file's properties look like this:
 
 ![Get rid of SpecFlow custom tool](/doc/img/GetRidOfCustomTool.png)
 
-2. Initially, the feature file looks like this:
+2. Add a new "SpecFlow Feature File" to the `Features` folder of the `Spec` project: 
+
+![Add new SpecFlow Feature File](/doc/img/AddNewSpecFlowFeatureFile.png)
+
+You will be provided with a feature file about a calculator adding two numbers. Just replace that specification with the above [feature](https://github.com/softozor/csharp-bdd-tdd/blob/master/doc/live-coding-session.md#feature-to-be-implemented). Copy the feature with the scenarios.
+
+3. Initially, the feature file looks like this:
 
 ![Initial Feature File](/doc/img/InitialPersonManagementFeatureFile.png)
 
 You surely noticed that all the `Given`, `When`, `Then` steps are highlighted in purple. This means that the underlying step definition code does not exist yet. 
 
-3. Generate the initial step definitions with a right-click on the feature file, then "Generate Step Definitions":
+4. Generate the initial step definitions with a right-click on the feature file, then "Generate Step Definitions":
 
 ![Generate initial step definitions](/doc/img/GenerateInitialStepDefinitions.png)
 
