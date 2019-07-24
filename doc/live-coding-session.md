@@ -139,6 +139,8 @@ with
 _scenarioContext.Pending();
 ```
 
+Note that you might need to add the feature file's code-behind manually to the project (as an existing item).
+
 ### Make the module available to the acceptance tests
 
 The `Spec` project builds an application that will glue together all the components necessary for our module to run. In particular, it needs to bootstrap our module. Because all the acceptance tests should be independent of each others, that means the module needs to be bootstrapped before each SpecFlow scenario. This is done by defining so-called [hooks](https://specflow.org/documentation/Hooks/). To boostrap our module in our acceptance tests, perform the following steps:
