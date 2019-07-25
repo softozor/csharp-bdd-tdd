@@ -64,13 +64,11 @@ By default, the project uses MSTest.
 
 ![Install SpecFlow](/doc/img/InstallSpecFlow.png)
 
-5. Install `Prism.Unity` (6.3.0) NuGet package in the `Spec` project.
+5. Provide the `Spec` project with a reference to the `Module`, `DataAccess`, and `Models` projects.
 
-6. Provide the `Spec` project with a reference to the `Module`, `DataAccess`, and `Models` projects.
+6. Add a new folder `Features` to the `Spec` project.
 
-7. Add a new folder `Features` to the `Spec` project.
-
-8. Create a folder `StepDefinitions` in the `Spec` project.
+7. Create a folder `StepDefinitions` in the `Spec` project.
 
 ### Feature initialization
 
@@ -141,15 +139,15 @@ _scenarioContext.Pending();
 
 Note that you might need to add the feature file's code-behind manually to the project (as an existing item).
 
-### Make the module available to the acceptance tests
+### Wire the module up
 
-The `Spec` project builds an application that will glue together all the components necessary for our module to run. In particular, it needs to bootstrap our module. Because all the acceptance tests should be independent of each others, that means the module needs to be bootstrapped before each SpecFlow scenario. This is done by defining so-called [hooks](https://specflow.org/documentation/Hooks/). To boostrap our module in our acceptance tests, perform the following steps:
+The `Spec` project builds an application that will glue together all the components necessary for our module to run. In particular, it needs to create our module's view model. Because all the acceptance tests should be independent of each others, that means the view model needs to be created before each SpecFlow scenario. This is done by defining so-called [hooks](https://specflow.org/documentation/Hooks/). To wire up our module for our acceptance tests, perform the following steps:
 
 1. Add a SpecFlow hook to the `Spec` project:
 
 ![Add SpecFlow Hook](/doc/img/AddSpecFlowHook.png)
 
-2. Run the module in the `BeforeScenario` hook:
+2. Wire up the module in the `BeforeScenario` hook:
 
 ```c#
 // Spec/Hooks.cs
@@ -164,76 +162,16 @@ namespace Spec
     [BeforeScenario]
     public void BeforeScenario()
     {
-      RunModule();
+      SetupStepsDependencies();
     }
 
-    private void RunModule()
+    private void SetupStepsDependencies()
     {
-      var bootstrapper = new Bootstrapper();
-      bootstrapper.Run();
+      // put the module's dependencies here when the time comes!
     }
   }
 }
 
-```
-
-3. Create the `Bootstrapper` class in the `Spec` project:
-
-```c#
-// Spec/Bootstrapper.cs
-
-using Prism.Modularity;
-using Prism.Unity;
-using System;
-using System.Windows;
-
-namespace Spec
-{
-  sealed class Bootstrapper : UnityBootstrapper
-  {
-    protected override IModuleCatalog CreateModuleCatalog()
-    {
-      return new ConfigurationModuleCatalog();
-    }
-
-    protected override void ConfigureModuleCatalog()
-    {
-      var moduleCatalog = ModuleCatalog as ModuleCatalog;
-      try
-      {
-        moduleCatalog.AddModule(typeof(PersonManagementModule.Module));
-      }
-      catch (Exception ex)
-      {
-        LogFatalException(ex);
-      }
-    }
-
-    private void LogFatalException(Exception ex)
-    {
-      Logger.Log($"Fatal error has occurred {ex.ToString()}", Prism.Logging.Category.Exception, Prism.Logging.Priority.High);
-    }
-
-    protected override void ConfigureContainer()
-    {
-      try
-      {
-        base.ConfigureContainer();
-      }
-      catch (Exception ex)
-      {
-        LogFatalException(ex);
-      }
-    }
-
-    protected override DependencyObject CreateShell()
-    {
-      // In our integration tests, we don't want to interact with the module's UI, 
-      // therefore we don't initialize it
-      return null;
-    }
-  }
-}
 ```
 
 ### Setup and teardown the database
@@ -323,7 +261,7 @@ namespace Spec
     public void BeforeScenario()
     {
       InitDatabase();
-      RunModule();
+      SetupStepsDependencies();
     }
 
     private void InitDatabase()
@@ -332,10 +270,9 @@ namespace Spec
       File.Copy(Path.GetFullPath(DB_FIXTURE), GetDatabaseFilename(), overwriteIfExists);
     }
 
-    private void RunModule()
+    private void SetupStepsDependencies()
     {
-      var bootstrapper = new Bootstrapper();
-      bootstrapper.Run();
+      
     }
 
     [AfterScenario]
@@ -409,30 +346,16 @@ namespace Spec.StepDefinitions
 
 In the above `GivenAListOfPersonsWasPersistedToTheDatabase` method, all the currently persisted persons are gathered and we check that the that persons' list isn't empty.
 
-The problem in that method is that no `IDataService` instance has been provided yet. In fact, not exactly. The `PersonManagementModule.Module` has registered something:
-
-```c#
-// Module/Module.cs
-
-public void Initialize()
-{
-  _container.RegisterType<IDataService, FileDataService>();
-}
-```
-
-and the module is bootstrapped in the hooks. However, our acceptance tests won't know anything about that instance, because SpecFlow is using another [DI container](https://github.com/techtalk/SpecFlow/wiki/Context-Injection). Our current ansatz to provide our acceptance tests with the instances registered in our module is just to transfer them from one container to the other like this:
+The problem in that method is that no `IDataService` instance has been provided yet. Our acceptance tests have to register it in their [DI container](https://github.com/techtalk/SpecFlow/wiki/Context-Injection): 
 
 ```c#
 // Spec/Hooks.cs
 
-private void ExposeType<T>(Bootstrapper bootstrapper) where T : class
+private void SetupStepsDependencies()
 {
-  var instance = bootstrapper.Container.Resolve<T>();
-  _objectContainer.RegisterInstanceAs(instance);
+  _objectContainer.RegisterTypeAs<FileDataService, IDataService>();
 }
 ```
-
-First, we resolve the interface's instance. Then, we put it into our acceptance tests' object container. There might be a more convenient way of dealing with that by means of the [SpecFlow plugins](https://github.com/techtalk/SpecFlow/wiki/Context-Injection#custom-dependency-injection-frameworks).
 
 Following our ansatz, our hooks class becomes:
 
@@ -465,8 +388,7 @@ namespace Spec
     public void BeforeScenario()
     {
       InitDatabase();
-      var bootstrapper = RunModule();
-      SetupStepsDependencies(bootstrapper);
+      SetupStepsDependencies();
     }
 
     private void InitDatabase()
@@ -475,22 +397,9 @@ namespace Spec
       File.Copy(Path.GetFullPath(DB_FIXTURE), GetDatabaseFilename(), overwriteIfExists);
     }
 
-    private Bootstrapper RunModule()
+    private void SetupStepsDependencies()
     {
-      var bootstrapper = new Bootstrapper();
-      bootstrapper.Run();
-      return bootstrapper;
-    }
-
-    private void SetupStepsDependencies(Bootstrapper bootstrapper)
-    {
-      ExposeType<IDataService>(bootstrapper);
-    }
-
-    private void ExposeType<T>(Bootstrapper bootstrapper) where T : class
-    {
-      var instance = bootstrapper.Container.Resolve<T>();
-      _objectContainer.RegisterInstanceAs(instance);
+      _objectContainer.RegisterTypeAs<FileDataService, IDataService>();
     }
 
     [AfterScenario]
@@ -1066,10 +975,10 @@ The acceptance tests need to be made aware of the `IPersonProvider`. Hence, our 
 ```c#
 // Spec/Hooks.cs
 
-private void SetupStepsDependencies(Bootstrapper bootstrapper)
+private void SetupStepsDependencies()
 {
-  ExposeType<IDataService>(bootstrapper);
-  ExposeType<IPersonProvider>(bootstrapper);
+  _objectContainer.RegisterTypeAs<FileDataService, IDataService>();
+  _objectContainer.RegisterTypeAs<PersonProvider, IPersonProvider>();
 }
 ```
 
@@ -1080,7 +989,6 @@ and our `Module` class registers our `PersonProvider` implementation:
 
 public void Initialize()
 {
-  _container.RegisterType<IFileHandlerFactory, FileHandlerFactory>();
   _container.RegisterType<IDataService, FileDataService>();
   _container.RegisterType<IPersonProvider, PersonProvider>();
 }

@@ -1,7 +1,6 @@
 ﻿using BoDi;
 using DataAccess.Handlers;
 using DataAccess.Services;
-using Microsoft.Practices.Unity;
 using PersonManagementModule.Services;
 using System.Collections.Specialized;
 using System.Configuration;
@@ -26,8 +25,7 @@ namespace Spec
     public void BeforeScenario()
     {
       InitDatabase();
-      var bootstrapper = RunModule();
-      SetupStepsDependencies(bootstrapper);
+      SetupStepsDependencies();
     }
 
     private void InitDatabase()
@@ -36,24 +34,11 @@ namespace Spec
       File.Copy(Path.GetFullPath(DB_FIXTURE), GetDatabaseFilename(), overwriteIfExists);
     }
 
-    private Bootstrapper RunModule()
+    private void SetupStepsDependencies()
     {
-      var bootstrapper = new Bootstrapper();
-      bootstrapper.Run();
-      return bootstrapper;
-    }
-
-    private void SetupStepsDependencies(Bootstrapper bootstrapper)
-    {
-      ExposeType<IDataService>(bootstrapper);
-      ExposeType<IFileHandlerFactory>(bootstrapper);
-      ExposeType<IPersonProvider>(bootstrapper);
-    }
-
-    private void ExposeType<T>(Bootstrapper bootstrapper) where T : class
-    {
-      var instance = bootstrapper.Container.Resolve<T>();
-      _objectContainer.RegisterInstanceAs(instance);
+      _objectContainer.RegisterTypeAs<FileDataService, IDataService>();
+      _objectContainer.RegisterTypeAs<FileHandlerFactory, IFileHandlerFactory>();
+      _objectContainer.RegisterTypeAs<PersonProvider, IPersonProvider>();
     }
 
     [AfterScenario]

@@ -22,7 +22,6 @@ namespace DataAccess.Services
 
     public void Dispose()
     {
-      throw new NotImplementedException();
     }
 
     public IEnumerable<Person> GetAllPersons()
