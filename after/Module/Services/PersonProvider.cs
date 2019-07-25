@@ -1,7 +1,8 @@
 ﻿using DataAccess.Services;
-using Models;
+using PersonManagementModule.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PersonManagementModule.Services
 {
@@ -14,14 +15,21 @@ namespace PersonManagementModule.Services
       _dataService = dataService;
     }
 
-    public void Save(IEnumerable<Person> persons)
+    public void Save(IEnumerable<PersonItem> persons)
     {
-      _dataService.SavePersons(persons ?? throw new NullReferenceException("Cannot save null list of persons"));
+      if (persons == null)
+      {
+        throw new NullReferenceException("Cannot save null list of persons");
+      }
+      var models = from item in persons select item.Model;
+      _dataService.SavePersons(models);
     }
 
-    public IEnumerable<Person> GetPersons()
+    public IEnumerable<PersonItem> GetPersons()
     {
-      return _dataService.GetAllPersons();
+      var persons = _dataService.GetAllPersons();
+      return from model in persons select new PersonItem(model);
+
     }
   }
 }

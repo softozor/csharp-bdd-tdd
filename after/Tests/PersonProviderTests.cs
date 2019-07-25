@@ -5,7 +5,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using Moq;
 using PersonManagementModule.Services;
+using PersonManagementModule.ViewModels;
 using System;
+using System.Linq;
 
 namespace Tests
 {
@@ -43,11 +45,12 @@ namespace Tests
     public void ShouldPersistPersonsUponSaving()
     {
       // When
-      var persons = Builder<Person>.CreateListOfSize(10).Build();
+      var models = Builder<Person>.CreateListOfSize(10).Build();
+      var persons = from model in models select new PersonItem(model);
       _provider.Save(persons);
 
       // Then
-      _dataServiceMock.Verify(service => service.SavePersons(persons), Times.Once());
+      _dataServiceMock.Verify(service => service.SavePersons(models), Times.Once());
     }
   }
 }

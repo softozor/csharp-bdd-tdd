@@ -799,8 +799,7 @@ public void ShouldPersistNewPerson()
   viewModel.SavePersonsCommand.Execute();
 
   // Then -- Assert
-  var personsToBeSaved = from item in viewModel.Persons select item.Model;
-  personProviderMock.Verify(provider => provider.Save(personsToBeSaved), Times.Once());
+  personProviderMock.Verify(provider => provider.Save(_viewModel.Persons), Times.Once());
 }
 ```
 
@@ -830,16 +829,16 @@ Additionally, the `IPersonProvider` needs to be defined:
 ```c#
 // Module/Services/IPersonProvider.cs
 
-using Models;
+using PersonManagementModule.ViewModels;
 using System.Collections.Generic;
 
 namespace PersonManagementModule.Services
 {
   public interface IPersonProvider
   {
-    IEnumerable<Person> GetPersons();
+    IEnumerable<PersonItem> GetPersons();
 
-    void Save(IEnumerable<Person> persons);
+    void Save(IEnumerable<PersonItem> persons);
   }
 }
 ```
@@ -875,8 +874,7 @@ namespace PersonManagementModule.ViewModels
 
     private void SavePersons()
     {
-      var personModels = from item in Persons select item.Model;
-      _personProvider.Save(personModels);
+      _personProvider.Save(Persons);
     }
 
     private bool CanSavePersons()
@@ -897,7 +895,9 @@ using FizzWare.NBuilder;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using Moq;
+using PersonManagementModule.ViewModels;
 using System;
+using System.Linq;
 
 namespace Tests
 {
@@ -926,11 +926,12 @@ namespace Tests
       var provider = new PersonProvider(dataServiceMock.Object);
 
       // When
-      var persons = Builder<Person>.CreateListOfSize(10).Build();
+      var models = Builder<Person>.CreateListOfSize(10).Build();
+      var persons = from model in models select new PersonItem(model);
       provider.Save(persons);
 
       // Then
-      dataServiceMock.Verify(service => service.SavePersons(persons), Times.Once());
+      dataServiceMock.Verify(service => service.SavePersons(models), Times.Once());
     }
   }
 }
@@ -942,9 +943,10 @@ In essence, we do not want to accept to save a `null` list of `Persons` and we w
 // Module/Services/PersonProvider.cs
 
 using DataAccess.Services;
-using Models;
+using PersonManagementModule.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PersonManagementModule.Services
 {
@@ -957,12 +959,17 @@ namespace PersonManagementModule.Services
       _dataService = dataService;
     }
 
-    public void Save(IEnumerable<Person> persons)
+    public void Save(IEnumerable<PersonItem> persons)
     {
-      _dataService.SavePersons(persons ?? throw new NullReferenceException("Cannot save null list of persons"));
+       if (persons == null)
+      {
+        throw new NullReferenceException("Cannot save null list of persons");
+      }
+      var models = from item in persons select item.Model;
+      _dataService.SavePersons(models);
     }
 
-    public IEnumerable<Person> GetPersons()
+    public IEnumerable<PersonItem> GetPersons()
     {
       throw new NotImplementedException();
     }
@@ -1047,11 +1054,12 @@ public class PersonProviderTests
   public void ShouldPersistPersonsUponSaving()
   {
     // When
-    var persons = Builder<Person>.CreateListOfSize(10).Build();
+    var models = Builder<Person>.CreateListOfSize(10).Build();
+    var persons = from model in models select new PersonItem(model);
     _provider.Save(persons);
 
     // Then
-    _dataServiceMock.Verify(service => service.SavePersons(persons), Times.Once());
+    _dataServiceMock.Verify(service => service.SavePersons(models), Times.Once());
   }
 }
 ```
@@ -1097,8 +1105,7 @@ public class ViewModelTests
     _viewModel.SavePersonsCommand.Execute();
 
     // Then
-    var personsToBeSaved = from item in _viewModel.Persons select item.Model;
-    _personProviderMock.Verify(provider => provider.Save(personsToBeSaved), Times.Once());
+    _personProviderMock.Verify(provider => provider.Save(_viewModel.Persons), Times.Once());
   }
 }
 ```
@@ -1180,8 +1187,10 @@ We need to ensure that the persons' data are loaded upon construction of the `Pe
 private void InitializeViewModel()
 {
   _personProviderMock = new Mock<IPersonProvider>();
+  var persistedModels = Builder<Person>.CreateListOfSize(10).Build();
+  var persistedPersons = from model in persistedModels select new PersonItem(model);
   _personProviderMock.Setup(provider => provider.GetPersons())
-    .Returns(Builder<Person>.CreateListOfSize(10).Build());
+    .Returns(persistedPersons);
   _viewModel = new PersonViewModel(_personProviderMock.Object);
 }
 ```
@@ -1196,12 +1205,13 @@ public void ShouldDisplayPersistedPersons()
 {
   // Given
   var persistedPersons = _personProviderMock.Object.GetPersons();
+  var modelsInDatabase = from person in persistedPersons select person.Model;
 
   // When
   var accessiblePersons = from personItem in _viewModel.Persons select personItem.Model;
 
   // Then
-  CollectionAssert.AreEqual(persistedPersons.ToList(), accessiblePersons.ToList());
+  CollectionAssert.AreEqual(modelsInDatabase.ToList(), accessiblePersons.ToList());
 }
 ```
 
@@ -1225,8 +1235,7 @@ public class PersonViewModel : BindableBase
 
   private void LoadPersons()
   {
-    var personItemList = from model in _personProvider.GetPersons() select new PersonItem(model);
-    Persons = new ObservableCollection<PersonItem>(personItemList);
+    Persons = new ObservableCollection<PersonItem>(_personProvider.GetPersons());
   }
 
   [...]

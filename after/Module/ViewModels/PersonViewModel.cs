@@ -9,6 +9,8 @@ namespace PersonManagementModule.ViewModels
 {
   public class PersonViewModel : BindableBase
   {
+    #region Setup
+
     readonly IFileHandlerFactory _fileHandlerFactory;
     readonly IPersonProvider _personProvider;
 
@@ -27,9 +29,10 @@ namespace PersonManagementModule.ViewModels
 
     private void LoadPersons()
     {
-      var personItemList = from model in _personProvider.GetPersons() select new PersonItem(model);
-      Persons = new ObservableCollection<PersonItem>(personItemList);
+      Persons = new ObservableCollection<PersonItem>(_personProvider.GetPersons());
     }
+
+    #endregion
 
     #region SavePersons
 
@@ -37,8 +40,7 @@ namespace PersonManagementModule.ViewModels
 
     private void SavePersons()
     {
-      var personModels = from item in Persons select item.Model;
-      _personProvider.Save(personModels);
+      _personProvider.Save(Persons);
     }
 
     private bool CanSavePersons()

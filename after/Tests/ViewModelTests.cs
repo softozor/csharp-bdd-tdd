@@ -32,8 +32,10 @@ namespace Tests
     private void InitializeViewModel()
     {
       _personProviderMock = new Mock<IPersonProvider>();
+      var persistedModels = Builder<Person>.CreateListOfSize(10).Build();
+      var persistedPersons = from model in persistedModels select new PersonItem(model);
       _personProviderMock.Setup(provider => provider.GetPersons())
-        .Returns(Builder<Person>.CreateListOfSize(10).Build());
+        .Returns(persistedPersons);
       _fileHandlerFactoryMock = new Mock<IFileHandlerFactory>();
       _viewModel = new PersonViewModel(_fileHandlerFactoryMock.Object, _personProviderMock.Object);
     }
@@ -53,8 +55,7 @@ namespace Tests
       _viewModel.SavePersonsCommand.Execute();
 
       // Then
-      var personsToBeSaved = from item in _viewModel.Persons select item.Model;
-      _personProviderMock.Verify(provider => provider.Save(personsToBeSaved), Times.Once());
+      _personProviderMock.Verify(provider => provider.Save(_viewModel.Persons), Times.Once());
     }
 
     /// <summary>
@@ -65,12 +66,13 @@ namespace Tests
     {
       // Given
       var persistedPersons = _personProviderMock.Object.GetPersons();
+      var modelsInDatabase = from person in persistedPersons select person.Model;
 
       // When
       var accessiblePersons = from personItem in _viewModel.Persons select personItem.Model;
 
       // Then
-      CollectionAssert.AreEqual(persistedPersons.ToList(), accessiblePersons.ToList());
+      CollectionAssert.AreEqual(modelsInDatabase.ToList(), accessiblePersons.ToList());
     }
 
     /// <summary>
